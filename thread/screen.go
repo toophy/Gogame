@@ -1,8 +1,8 @@
 package thread
 
 import (
+	"Gogame/screen"
 	"fmt"
-	"game/screen"
 	lua "github.com/yuin/gopher-lua"
 )
 
