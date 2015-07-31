@@ -101,7 +101,7 @@ func (this *Screen) on_first_run() {
 		fmt.Println(err.Error())
 	}
 
-	Sub(this.LuaState, 100, 88)
+	// Sub(this.LuaState, 100, 88)
 }
 
 // 响应线程退出
