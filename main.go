@@ -49,5 +49,5 @@ func main() {
 		})
 	}
 
-	thread.GetManager().Wait_thread_over()
+	thread.GetMaster().Wait_thread_over()
 }

@@ -1,48 +1,99 @@
 package thread
 
 import (
-	"fmt"
-	"sync/atomic"
+	//"fmt"
+	"sync"
 	"time"
 )
 
-type Manager struct {
-	RunThreadCount int32
+// 主线程
+type Master struct {
+	Thread
+	threadLock  sync.RWMutex
+	threadCount int32
+	threadIds   map[int32]IThread
 }
 
-var myManager *Manager = nil
+var myMaster *Master = nil
 
-func GetManager() *Manager {
-	if myManager == nil {
-		myManager = &Manager{
-			RunThreadCount: 0,
+func GetMaster() *Master {
+	if myMaster == nil {
+		myMaster = &Master{}
+		if !myMaster.Init_master_thread(myMaster, "主线程", 100) {
+			return nil
 		}
+		myMaster.Run_thread()
 	}
-	return myManager
+	return myMaster
+}
+
+func (this *Master) Init_master_thread(self IThread, name string, heart_time int64) bool {
+	if this.Init_thread(self, Tid_master, name, heart_time) {
+		this.threadCount = 0
+		this.threadIds = make(map[int32]IThread, 0)
+		return true
+	}
+	return false
 }
 
 // 增加运行的线程
-func (this *Manager) Add_run_thread() {
-	atomic.AddInt32(&this.RunThreadCount, 1)
+func (this *Master) Add_run_thread(a IThread) {
+	this.threadLock.Lock()
+	defer this.threadLock.Unlock()
+
+	if _, ok := this.threadIds[a.Get_thread_id()]; ok == false {
+		this.threadCount++
+		this.threadIds[a.Get_thread_id()] = a
+	}
 }
 
-func (this *Manager) Release_run_thread() {
-	atomic.AddInt32(&this.RunThreadCount, -1)
+func (this *Master) Release_run_thread(a IThread) {
+	this.threadLock.Lock()
+	defer this.threadLock.Unlock()
+
+	if _, ok := this.threadIds[a.Get_thread_id()]; ok == true {
+		this.threadCount--
+		delete(this.threadIds, a.Get_thread_id())
+	}
+}
+
+// 首次运行
+func (this *Master) on_first_run() {
+}
+
+// 响应线程退出
+func (this *Master) on_end() {
+}
+
+// 响应线程运行
+func (this *Master) on_run() {
 }
 
 // 等待所有线程结束
-func (this *Manager) Wait_thread_over() {
+func (this *Master) Wait_thread_over() {
 	for {
 		select {
-		case <-time.Tick(5 * time.Second):
-			opsFinal := atomic.LoadInt32(&this.RunThreadCount)
-			if opsFinal <= 0 {
-				fmt.Println("所有线程都已经停止")
+		case <-time.Tick(10 * time.Second):
+			this.threadLock.Lock()
+
+			if this.threadCount <= 0 {
+				this.threadLock.Unlock()
 				time.Sleep(2 * time.Second)
 				return
-			} else {
-				//fmt.Printf("有%d个线程正在运行\n", opsFinal)
+			} else if this.threadCount == 1 {
+				n := time.Duration(time.Now().UnixNano())
+				this.Task_push(&Event_close_thread{
+					Task: Task{
+						Id_:       3,
+						Start_:    n + 2*time.Second,
+						Interval_: time.Second,
+						Iterate_:  0,
+					},
+					Master: this,
+				})
 			}
+
+			this.threadLock.Unlock()
 		}
 	}
 }

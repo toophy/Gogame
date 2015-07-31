@@ -108,43 +108,5 @@ func Test(t *testing.T) {
 		name:     "你妹啊",
 	})
 
-	c := mythread.Task_count()
-	if c != 4 {
-		t.Errorf("Task count should be 4 but get %d.", c)
-	}
-	c = mythread.Task_tickCount(n + time.Second)
-	if c != 2 {
-		t.Errorf("Task count should be 2 but get %d.", c)
-	}
-	c = mythread.Task_tickCount(n + 3*time.Second)
-	if c != 2 {
-		t.Errorf("Task count should be 2 but get %d.", c)
-	}
-	time.Sleep(2 * time.Second)
-	c = mythread.Task_count()
-	if c != 2 {
-		t.Errorf("Task count should be 2 but get %d.", c)
-	}
-	c = mythread.Task_tickCount(n)
-	if c != 0 {
-		t.Errorf("Task count should be 0 but get %d.", c)
-	}
-	c = mythread.Task_tickCount(n + 3*time.Second)
-	if c != 2 {
-		t.Errorf("Task count should be 2 but get %d.", c)
-	}
-	time.Sleep(2 * time.Second)
-	c = mythread.Task_count()
-	if c != 0 {
-		t.Errorf("Task count should be 0 but get %d.", c)
-	}
-	c = mythread.Task_tickCount(n)
-	if c != 0 {
-		t.Errorf("Task count should be 0 but get %d.", c)
-	}
-	c = mythread.Task_tickCount(n + 2*time.Second)
-	if c != 0 {
-		t.Errorf("Task count should be 0 but get %d.", c)
-	}
-
+	time.Sleep(15 * time.Second)
 }

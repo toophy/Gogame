@@ -2,7 +2,7 @@ package thread
 
 import (
 	"errors"
-	"fmt"
+	//"fmt"
 )
 
 type Event_close_thread struct {
@@ -12,7 +12,6 @@ type Event_close_thread struct {
 
 func (t *Event_close_thread) Exec() error {
 	if t.Master != nil {
-		fmt.Printf("预备关闭线程%s\n", t.Master.Get_thread_name())
 		t.Master.pre_close_thread()
 		return nil
 	}
