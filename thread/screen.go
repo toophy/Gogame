@@ -6,6 +6,7 @@ import (
 	lua "github.com/yuin/gopher-lua"
 )
 
+// 场景容器
 type ScreenMap map[int32]*screen.Screen
 
 // 场景线程
@@ -17,6 +18,7 @@ type Screen struct {
 	LuaState       *lua.LState // Lua实体
 }
 
+// 新建场景线程
 func New_screen_thread(id int32, name string, heart_time int64) *Screen {
 	a := &Screen{}
 	if a.Init_screen_thread(id, name, heart_time) {
@@ -25,6 +27,7 @@ func New_screen_thread(id int32, name string, heart_time int64) *Screen {
 	return nil
 }
 
+// 初始化场景线程
 func (s *Screen) Init_screen_thread(id int32, name string, heart_time int64) bool {
 	if id < Tid_screen_1 || id > Tid_screen_9 {
 		return false
@@ -37,6 +40,7 @@ func (s *Screen) Init_screen_thread(id int32, name string, heart_time int64) boo
 	return false
 }
 
+// 增加场景
 func (s *Screen) Add_screen(name string, oid int32) bool {
 	a := &screen.Screen{}
 	a.Load(name, s.Last_screen_id, 1)
@@ -47,6 +51,7 @@ func (s *Screen) Add_screen(name string, oid int32) bool {
 	return true
 }
 
+// 删除场景
 func (s *Screen) Del_screen(id int32) bool {
 	if _, ok := s.Screens[id]; ok {
 		s.Screens[id].Unload()

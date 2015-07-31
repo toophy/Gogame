@@ -16,6 +16,7 @@ type Master struct {
 
 var myMaster *Master = nil
 
+// 获取主线程
 func GetMaster() *Master {
 	if myMaster == nil {
 		myMaster = &Master{}
@@ -27,6 +28,7 @@ func GetMaster() *Master {
 	return myMaster
 }
 
+// 初始化主线程
 func (this *Master) Init_master_thread(self IThread, name string, heart_time int64) bool {
 	if this.Init_thread(self, Tid_master, name, heart_time) {
 		this.threadCount = 0
@@ -47,6 +49,7 @@ func (this *Master) Add_run_thread(a IThread) {
 	}
 }
 
+// 释放运行的线程
 func (this *Master) Release_run_thread(a IThread) {
 	this.threadLock.Lock()
 	defer this.threadLock.Unlock()

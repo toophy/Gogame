@@ -152,6 +152,7 @@ func (this *Thread) pre_close_thread() {
 	this.pre_stop = true
 }
 
+// 投递任务
 func (this *Thread) Task_push(task ITask) {
 	this.mutex.Lock()
 	defer this.mutex.Unlock()
@@ -164,12 +165,14 @@ func (this *Thread) Task_push(task ITask) {
 	this.ticks[start] = append(this.ticks[start], id)
 }
 
+// 删除任务
 func (this *Thread) Task_remove(id interface{}) {
 	this.mutex.Lock()
 	defer this.mutex.Unlock()
 	delete(this.tasks, id)
 }
 
+// 取消任务
 func (this *Thread) Task_cancel(id interface{}) (err error) {
 	this.mutex.Lock()
 	defer this.mutex.Unlock()
@@ -178,6 +181,7 @@ func (this *Thread) Task_cancel(id interface{}) (err error) {
 	return
 }
 
+// 执行一个任务
 func (this *Thread) task_exec(task ITask) (err error) {
 	this.mutex.Lock()
 	defer func() {

@@ -6,6 +6,9 @@ import (
 	"time"
 )
 
+// Gogame framework version.
+const VERSION = "0.0.1"
+
 func main() {
 	sc1 := thread.New_screen_thread(thread.Tid_screen_1, "场景线程1", 100)
 	if sc1 != nil {
