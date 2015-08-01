@@ -71,25 +71,41 @@ func Sum(L *lua.LState) int {
 	return 1
 }
 
-func Sub(L *lua.LState, a, b int) int {
+func (this *Screen) Tolua_OnInitScreen() /*int*/ {
 	defer func() {
 		if r := recover(); r != nil {
 			fmt.Println(r.(error).Error())
 		}
 	}()
 
-	if err := L.CallByParam(lua.P{
-		Fn:      L.GetGlobal("common.mysub"), // 调用的Lua函数
-		NRet:    1,                           // 返回值的数量
-		Protect: true,                        // 保护?
-	}, lua.LNumber(a), lua.LNumber(b)); err != nil {
+	RegLua_screenThread(this.LuaState)
+
+	ud := this.LuaState.NewUserData()
+	ud.Value = this
+	this.LuaState.SetMetatable(ud, this.LuaState.GetTypeMetatable(regScreenThreadName))
+
+	if err := this.LuaState.CallByParam(lua.P{
+		Fn:      this.LuaState.GetGlobal("OnInitScreen"), // 调用的Lua函数
+		NRet:    0,                                       // 返回值的数量
+		Protect: true,                                    // 保护?
+	}, this.LuaState.GetTypeMetatable(regScreenThreadName)); err != nil {
 		panic(err)
 	}
 
-	ret := L.Get(-1)
-	L.Pop(1)
+	// ret := this.LuaState.Get(-1)
+	// this.LuaState.Pop(1)
 
-	return int(ret.(lua.LNumber))
+	// return int(ret.(lua.LNumber))
+
+	// 	this.LuaState.SetGlobal("g_thread", luar.New(this.LuaState, this))
+
+	// if err := this.LuaState.CallByParam(lua.P{
+	// 	Fn:      this.LuaState.GetGlobal("OnInitScreen"), // 调用的Lua函数
+	// 	NRet:    0,                                       // 返回值的数量
+	// 	Protect: true,                                    // 保护?
+	// }, luar.New(this.LuaState, this)); err != nil {
+	// 	panic(err)
+	// }
 }
 
 // 响应线程首次运行
@@ -105,6 +121,8 @@ func (this *Screen) on_first_run() {
 	if err != nil {
 		fmt.Println(err.Error())
 	}
+
+	this.Tolua_OnInitScreen()
 
 	// Sub(this.LuaState, 100, 88)
 }
