@@ -44,7 +44,9 @@ func checkScreen(L *lua.LState) *Screen {
 }
 
 var screenThreadMethods = map[string]lua.LGFunction{
-	"Add_screen": screenThreadAddScreen,
+	"Add_screen":  screenThreadAddScreen,
+	"Get_randNum": screenThreadGetRandNum,
+	"Set_randNum": screenThreadSetRandNum,
 }
 
 // Getter and setter for the Person#Name
@@ -57,4 +59,24 @@ func screenThreadAddScreen(L *lua.LState) int {
 
 	L.Push(lua.LBool(ret))
 	return 1
+}
+
+// Getter and setter for the Person#Name
+func screenThreadGetRandNum(L *lua.LState) int {
+	p := checkScreen(L)
+
+	ret := p.GetRandNum()
+
+	L.Push(lua.LNumber(ret))
+	return 1
+}
+
+// Getter and setter for the Person#Name
+func screenThreadSetRandNum(L *lua.LState) int {
+	p := checkScreen(L)
+	num := int64(L.CheckInt64(2))
+
+	p.SetRandNum(num)
+
+	return 0
 }

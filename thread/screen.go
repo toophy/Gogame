@@ -14,6 +14,7 @@ type Screen struct {
 	Thread
 
 	Last_screen_id int32       // 最后一个场景id
+	RandNum        int64       //测试64位整数
 	Screens        ScreenMap   // screen 列表
 	LuaState       *lua.LState // Lua实体
 }
@@ -61,15 +62,23 @@ func (s *Screen) Del_screen(id int32) bool {
 	return false
 }
 
-// 测试Lua调用Go函数
-func Sum(L *lua.LState) int {
-	a := L.ToInt(1)
-	b := L.ToInt(2)
-
-	L.Push(lua.LNumber(a + b))
-
-	return 1
+func (this *Screen) GetRandNum() int64 {
+	return this.RandNum
 }
+
+func (this *Screen) SetRandNum(a int64) {
+	this.RandNum = a
+}
+
+// // 测试Lua调用Go函数
+// func Sum(L *lua.LState) int {
+// 	a := L.ToInt(1)
+// 	b := L.ToInt(2)
+
+// 	L.Push(lua.LNumber(a + b))
+
+// 	return 1
+// }
 
 func (this *Screen) Tolua_OnInitScreen() /*int*/ {
 	defer func() {
@@ -104,7 +113,9 @@ func (this *Screen) on_first_run() {
 		panic("场景线程初始化Lua失败")
 	}
 
-	this.LuaState.SetGlobal("mysum", this.LuaState.NewFunction(Sum))
+	this.RandNum = 12345678912345678
+
+	// this.LuaState.SetGlobal("mysum", this.LuaState.NewFunction(Sum))
 
 	err := this.LuaState.DoFile("data/screens/main.lua")
 	if err != nil {
