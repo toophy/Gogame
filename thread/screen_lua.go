@@ -1,7 +1,6 @@
 package thread
 
 import (
-	"fmt"
 	lua "github.com/yuin/gopher-lua"
 )
 
@@ -17,26 +16,22 @@ func RegLua_screenThread(L *lua.LState) {
 	L.SetGlobal("screen_thread", mt)
 
 	// 成员函数
-	L.SetField(mt, "new", L.NewFunction(newScreenThread))
+	// L.SetField(mt, "new", L.NewFunction(newScreenThread))
 
 	// 成员变量
-	//L.SetField(mt, "__index", L.SetFuncs(L.NewTable(), screenThreadMethods))
-	L.SetField(mt, "__index", L.NewFunction(screenThreadAddScreen))
-
-	fmt.Println("nima")
-	fmt.Printf("%-v", *mt)
+	L.SetField(mt, "__index", L.SetFuncs(L.NewTable(), screenThreadMethods))
 }
 
 // Constructor
-func newScreenThread(L *lua.LState) int {
-	println("newScreenThread")
-	scr := &Screen{}
-	ud := L.NewUserData()
-	ud.Value = scr
-	L.SetMetatable(ud, L.GetTypeMetatable(regScreenThreadName))
-	L.Push(ud)
-	return 1
-}
+// func newScreenThread(L *lua.LState) int {
+// 	println("newScreenThread")
+// 	scr := &Screen{}
+// 	ud := L.NewUserData()
+// 	ud.Value = scr
+// 	L.SetMetatable(ud, L.GetTypeMetatable(regScreenThreadName))
+// 	L.Push(ud)
+// 	return 1
+// }
 
 // 检查Lua首个参数是不是对象指针
 func checkScreen(L *lua.LState) *Screen {

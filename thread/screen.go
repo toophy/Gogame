@@ -88,24 +88,13 @@ func (this *Screen) Tolua_OnInitScreen() /*int*/ {
 		Fn:      this.LuaState.GetGlobal("OnInitScreen"), // 调用的Lua函数
 		NRet:    0,                                       // 返回值的数量
 		Protect: true,                                    // 保护?
-	}, this.LuaState.GetTypeMetatable(regScreenThreadName)); err != nil {
+	}, ud); err != nil {
 		panic(err)
 	}
 
 	// ret := this.LuaState.Get(-1)
 	// this.LuaState.Pop(1)
-
 	// return int(ret.(lua.LNumber))
-
-	// 	this.LuaState.SetGlobal("g_thread", luar.New(this.LuaState, this))
-
-	// if err := this.LuaState.CallByParam(lua.P{
-	// 	Fn:      this.LuaState.GetGlobal("OnInitScreen"), // 调用的Lua函数
-	// 	NRet:    0,                                       // 返回值的数量
-	// 	Protect: true,                                    // 保护?
-	// }, luar.New(this.LuaState, this)); err != nil {
-	// 	panic(err)
-	// }
 }
 
 // 响应线程首次运行
@@ -123,8 +112,6 @@ func (this *Screen) on_first_run() {
 	}
 
 	this.Tolua_OnInitScreen()
-
-	// Sub(this.LuaState, 100, 88)
 }
 
 // 响应线程退出
