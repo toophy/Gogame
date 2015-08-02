@@ -1,7 +1,7 @@
 package thread
 
 import (
-	lua "github.com/yuin/gopher-lua"
+	lua "github.com/toophy/gopher-lua"
 )
 
 // 注册本包所有Lua接口结构

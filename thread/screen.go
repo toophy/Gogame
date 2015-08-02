@@ -3,7 +3,7 @@ package thread
 import (
 	"errors"
 	"github.com/toophy/Gogame/screen"
-	lua "github.com/yuin/gopher-lua"
+	lua "github.com/toophy/gopher-lua"
 )
 
 // 场景容器

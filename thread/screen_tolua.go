@@ -2,7 +2,7 @@ package thread
 
 import (
 	"fmt"
-	lua "github.com/yuin/gopher-lua"
+	lua "github.com/toophy/gopher-lua"
 )
 
 // 获取用Lua类型封装结构指针  *LUserData

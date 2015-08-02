@@ -3,7 +3,7 @@ package thread
 import (
 	//"fmt"
 	"errors"
-	lua "github.com/yuin/gopher-lua"
+	lua "github.com/toophy/gopher-lua"
 	"sync"
 	"time"
 )
