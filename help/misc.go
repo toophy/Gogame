@@ -3,7 +3,7 @@ package help
 import (
 	"crypto/md5"
 	"encoding/hex"
-	"github.com/mahonia"
+	"github.com/toophy/mahonia"
 	"io"
 	"math/rand"
 	"os"
