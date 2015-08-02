@@ -20,7 +20,8 @@ var myMaster *Master = nil
 func GetMaster() *Master {
 	if myMaster == nil {
 		myMaster = &Master{}
-		if !myMaster.Init_master_thread(myMaster, "主线程", 100) {
+		err := myMaster.Init_master_thread(myMaster, "主线程", 100)
+		if err != nil {
 			return nil
 		}
 		myMaster.Run_thread()
@@ -29,13 +30,14 @@ func GetMaster() *Master {
 }
 
 // 初始化主线程
-func (this *Master) Init_master_thread(self IThread, name string, heart_time int64) bool {
-	if this.Init_thread(self, Tid_master, name, heart_time) {
+func (this *Master) Init_master_thread(self IThread, name string, heart_time int64) error {
+	err := this.Init_thread(self, Tid_master, name, heart_time)
+	if err == nil {
 		this.threadCount = 0
 		this.threadIds = make(map[int32]IThread, 0)
-		return true
+		return nil
 	}
-	return false
+	return err
 }
 
 // 增加运行的线程
@@ -92,8 +94,8 @@ func (this *Master) Wait_thread_over() {
 // 首次运行
 func (this *Master) on_first_run() {
 
-	sc1 := New_screen_thread(Tid_screen_1, "场景线程1", 100)
-	if sc1 != nil {
+	sc1, err := New_screen_thread(Tid_screen_1, "场景线程1", 100)
+	if err == nil && sc1 != nil {
 		sc1.Run_thread()
 
 		n := time.Duration(time.Now().UnixNano())
@@ -132,6 +134,12 @@ func (this *Master) on_first_run() {
 			},
 			Master: sc1,
 		})
+	} else {
+		if err != nil {
+			println("[E] 新建场景线程失败:" + err.Error())
+		} else {
+			println("[E] 新建场景线程失败:")
+		}
 	}
 }
 

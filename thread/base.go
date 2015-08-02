@@ -34,14 +34,14 @@ var (
 
 // 线程接口
 type IThread interface {
-	Init_thread(IThread, int32, string, int64) bool // 初始化线程
-	Run_thread()                                    // 运行线程
-	Get_thread_id() int32                           // 获取线程ID
-	Get_thread_name() string                        // 获取线程名称
-	pre_close_thread()                              // 预备关闭线程
-	on_first_run()                                  // 首次运行(在 on_run 前面)
-	on_run()                                        // 线程运行部分
-	on_end()                                        // 线程结束回调
+	Init_thread(IThread, int32, string, int64) error // 初始化线程
+	Run_thread()                                     // 运行线程
+	Get_thread_id() int32                            // 获取线程ID
+	Get_thread_name() string                         // 获取线程名称
+	pre_close_thread()                               // 预备关闭线程
+	on_first_run()                                   // 首次运行(在 on_run 前面)
+	on_run()                                         // 线程运行部分
+	on_end()                                         // 线程结束回调
 
 	Task_push(task ITask)                   // 任务推送
 	Task_remove(id interface{})             // 任务删除
@@ -69,12 +69,12 @@ type Thread struct {
 
 // 初始化线程(必须调用)
 // usage : Init_thread(Tid_master, "主线程", 100)
-func (this *Thread) Init_thread(self IThread, id int32, name string, heart_time int64) bool {
+func (this *Thread) Init_thread(self IThread, id int32, name string, heart_time int64) error {
 	if id < Tid_master || id >= Tid_last {
-		return false
+		return errors.New("[E] 线程ID超出范围 [Tid_master,Tid_last]")
 	}
 	if self == nil {
-		return false
+		return errors.New("[E] 线程自身指针不能为nil")
 	}
 
 	this.id = id
@@ -87,7 +87,7 @@ func (this *Thread) Init_thread(self IThread, id int32, name string, heart_time 
 	this.self = self
 	this.first_run = true
 
-	return true
+	return nil
 }
 
 // 运行线程

@@ -31,6 +31,7 @@ func (this *ScreenThread) Tolua_OnInitScreen() (ret int) {
 		NRet:    1,                                       // 返回值的数量
 		Protect: true,                                    // 保护?
 	}, this.GetLUserData("ScreenThread", this)); err != nil {
+		println("panic c")
 		panic(err)
 	}
 

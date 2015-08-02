@@ -77,7 +77,10 @@ func (t *_taskx) Cancel() error {
 
 func Test(t *testing.T) {
 	mythread := &Thread{}
-	mythread.Init_thread(1, 100)
+	err := mythread.Init_thread(1, 100)
+	if err != nil {
+		panic(err.Error())
+	}
 
 	go mythread.Run_thread()
 
