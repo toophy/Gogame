@@ -2,7 +2,7 @@
 package main
 
 import (
-	"Gogame/thread"
+	"github.com/toophy/Gogame/thread"
 )
 
 // Gogame framework version.

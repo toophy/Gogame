@@ -21,5 +21,5 @@ function OnInitScreen( a )
 
 	local etime = os.time()
 
-	print(etime)
+	print(etime-btime)
 end

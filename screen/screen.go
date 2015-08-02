@@ -1,9 +1,9 @@
 package screen
 
 import (
-	"Gogame/actor"
-	"Gogame/help"
 	"fmt"
+	"github.com/toophy/Gogame/actor"
+	"github.com/toophy/Gogame/help"
 )
 
 type Screen struct {

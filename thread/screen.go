@@ -1,8 +1,8 @@
 package thread
 
 import (
-	"Gogame/screen"
 	"fmt"
+	"github.com/toophy/Gogame/screen"
 	lua "github.com/yuin/gopher-lua"
 )
 
@@ -70,42 +70,6 @@ func (this *Screen) SetRandNum(a int64) {
 	this.RandNum = a
 }
 
-// // 测试Lua调用Go函数
-// func Sum(L *lua.LState) int {
-// 	a := L.ToInt(1)
-// 	b := L.ToInt(2)
-
-// 	L.Push(lua.LNumber(a + b))
-
-// 	return 1
-// }
-
-func (this *Screen) Tolua_OnInitScreen() /*int*/ {
-	defer func() {
-		if r := recover(); r != nil {
-			fmt.Println(r.(error).Error())
-		}
-	}()
-
-	RegLua_screenThread(this.LuaState)
-
-	ud := this.LuaState.NewUserData()
-	ud.Value = this
-	this.LuaState.SetMetatable(ud, this.LuaState.GetTypeMetatable(regScreenThreadName))
-
-	if err := this.LuaState.CallByParam(lua.P{
-		Fn:      this.LuaState.GetGlobal("OnInitScreen"), // 调用的Lua函数
-		NRet:    0,                                       // 返回值的数量
-		Protect: true,                                    // 保护?
-	}, ud); err != nil {
-		panic(err)
-	}
-
-	// ret := this.LuaState.Get(-1)
-	// this.LuaState.Pop(1)
-	// return int(ret.(lua.LNumber))
-}
-
 // 响应线程首次运行
 func (this *Screen) on_first_run() {
 	this.LuaState = lua.NewState()
@@ -121,6 +85,8 @@ func (this *Screen) on_first_run() {
 	if err != nil {
 		fmt.Println(err.Error())
 	}
+
+	RegLua_sct(this.LuaState)
 
 	this.Tolua_OnInitScreen()
 }
