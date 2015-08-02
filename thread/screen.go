@@ -2,7 +2,6 @@ package thread
 
 import (
 	"errors"
-	"fmt"
 	"github.com/toophy/Gogame/screen"
 	lua "github.com/yuin/gopher-lua"
 )
@@ -22,7 +21,7 @@ type ScreenThread struct {
 
 // 新建场景线程
 func New_screen_thread(id int32, name string, heart_time int64) (*ScreenThread, error) {
-	a := &ScreenThread{}
+	a := new(ScreenThread)
 	err := a.Init_screen_thread(id, name, heart_time)
 	if err == nil {
 		return a, nil
@@ -39,11 +38,6 @@ func (this *ScreenThread) Init_screen_thread(id int32, name string, heart_time i
 	if err == nil {
 		this.screens = make(ScreenMap, 0)
 		this.lastScreenId = (id - 1) * 10000
-
-		this.luaState = lua.NewState()
-		if this.luaState == nil {
-			panic("场景线程初始化Lua失败")
-		}
 		return nil
 	}
 	return err
@@ -51,7 +45,7 @@ func (this *ScreenThread) Init_screen_thread(id int32, name string, heart_time i
 
 // 增加场景
 func (this *ScreenThread) Add_screen(name string, oid int32) bool {
-	a := &screen.Screen{}
+	a := new(screen.Screen)
 	a.Load(name, this.lastScreenId, 1)
 	this.screens[1] = a
 
@@ -81,16 +75,20 @@ func (this *ScreenThread) SetRandNum(a int64) {
 // 响应线程首次运行
 func (this *ScreenThread) on_first_run() {
 
+	errInit := this.ReloadLuaState()
+	if errInit != nil {
+		println(errInit.Error())
+		return
+	}
+
 	this.randNum = 12345678912345678
 
 	// this.LuaState.SetGlobal("mysum", this.LuaState.NewFunction(Sum))
 
-	err := this.luaState.DoFile("data/screens/main.lua")
-	if err != nil {
-		fmt.Println(err.Error())
-	}
-
-	RegLua_all(this.luaState)
+	// err := this.luaState.DoFile("data/screens/main.lua")
+	// if err != nil {
+	// 	fmt.Println(err.Error())
+	// }
 
 	println(this.Tolua_OnInitScreen())
 }
@@ -105,4 +103,26 @@ func (this *ScreenThread) on_end() {
 
 // 响应线程运行
 func (this *ScreenThread) on_run() {
+}
+
+// 初始化LuaState, 可以用来 Reload LuaState
+func (this *ScreenThread) ReloadLuaState() error {
+
+	if this.luaState != nil {
+		this.luaState.Close()
+		this.luaState = nil
+	}
+
+	this.luaState = lua.NewState()
+	if this.luaState == nil {
+		return errors.New("[E] 场景线程初始化Lua失败")
+	}
+
+	RegLua_all(this.luaState)
+
+	// 加载所有 screens 文件夹里面的 *.lua 文件
+	this.luaState.Require("data/screens/main")
+	this.luaState.Require("data/screens/common")
+
+	return nil
 }
