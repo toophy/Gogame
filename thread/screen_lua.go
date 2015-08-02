@@ -4,20 +4,35 @@ import (
 	lua "github.com/yuin/gopher-lua"
 )
 
-const struct_name = "screen_thread"
+// 注册本包所有Lua接口结构
+func RegLua_all(L *lua.LState) error {
 
-func RegLua_sct(L *lua.LState) {
+	type regLuaFunc func(string, *lua.LState) error
+
+	regLuaStructs := map[string]regLuaFunc{
+		"ScreenThread": regLua_screen_thread,
+	}
+
+	for k, _ := range regLuaStructs {
+		regLuaStructs[k](k, L)
+	}
+
+	return nil
+}
+
+// 向Lua注册结构 : ScreenThread
+func regLua_screen_thread(struct_name string, L *lua.LState) error {
 
 	mt := L.NewTypeMetatable(struct_name)
-	L.SetGlobal("screen_thread", mt)
+	L.SetGlobal(struct_name, mt)
 
 	// 检查Lua首个参数是不是对象指针
-	check := func(L *lua.LState) *Screen {
+	check := func(L *lua.LState) *ScreenThread {
 		ud := L.CheckUserData(1)
-		if v, ok := ud.Value.(*Screen); ok {
+		if v, ok := ud.Value.(*ScreenThread); ok {
 			return v
 		}
-		L.ArgError(1, "Screen expected")
+		L.ArgError(1, struct_name+" expected")
 
 		return nil
 	}
@@ -63,4 +78,6 @@ func RegLua_sct(L *lua.LState) {
 				return 0
 			},
 		}))
+
+	return nil
 }

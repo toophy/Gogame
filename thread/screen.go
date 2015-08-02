@@ -10,18 +10,18 @@ import (
 type ScreenMap map[int32]*screen.Screen
 
 // 场景线程
-type Screen struct {
+type ScreenThread struct {
 	Thread
 
-	Last_screen_id int32       // 最后一个场景id
-	RandNum        int64       //测试64位整数
-	Screens        ScreenMap   // screen 列表
-	LuaState       *lua.LState // Lua实体
+	lastScreenId int32       // 最后一个场景id
+	randNum      int64       //测试64位整数
+	screens      ScreenMap   // screen 列表
+	luaState     *lua.LState // Lua实体
 }
 
 // 新建场景线程
-func New_screen_thread(id int32, name string, heart_time int64) *Screen {
-	a := &Screen{}
+func New_screen_thread(id int32, name string, heart_time int64) *ScreenThread {
+	a := &ScreenThread{}
 	if a.Init_screen_thread(id, name, heart_time) {
 		return a
 	}
@@ -29,76 +29,76 @@ func New_screen_thread(id int32, name string, heart_time int64) *Screen {
 }
 
 // 初始化场景线程
-func (s *Screen) Init_screen_thread(id int32, name string, heart_time int64) bool {
+func (s *ScreenThread) Init_screen_thread(id int32, name string, heart_time int64) bool {
 	if id < Tid_screen_1 || id > Tid_screen_9 {
 		return false
 	}
 	if s.Init_thread(s, id, name, heart_time) {
-		s.Screens = make(ScreenMap, 0)
-		s.Last_screen_id = (id - 1) * 10000
+		s.screens = make(ScreenMap, 0)
+		s.lastScreenId = (id - 1) * 10000
 		return true
 	}
 	return false
 }
 
 // 增加场景
-func (s *Screen) Add_screen(name string, oid int32) bool {
+func (s *ScreenThread) Add_screen(name string, oid int32) bool {
 	a := &screen.Screen{}
-	a.Load(name, s.Last_screen_id, 1)
-	s.Screens[1] = a
+	a.Load(name, s.lastScreenId, 1)
+	s.screens[1] = a
 
-	s.Last_screen_id++
+	s.lastScreenId++
 
 	return true
 }
 
 // 删除场景
-func (s *Screen) Del_screen(id int32) bool {
-	if _, ok := s.Screens[id]; ok {
-		s.Screens[id].Unload()
-		delete(s.Screens, id)
+func (s *ScreenThread) Del_screen(id int32) bool {
+	if _, ok := s.screens[id]; ok {
+		s.screens[id].Unload()
+		delete(s.screens, id)
 		return true
 	}
 	return false
 }
 
-func (this *Screen) GetRandNum() int64 {
-	return this.RandNum
+func (this *ScreenThread) GetRandNum() int64 {
+	return this.randNum
 }
 
-func (this *Screen) SetRandNum(a int64) {
-	this.RandNum = a
+func (this *ScreenThread) SetRandNum(a int64) {
+	this.randNum = a
 }
 
 // 响应线程首次运行
-func (this *Screen) on_first_run() {
-	this.LuaState = lua.NewState()
-	if this.LuaState == nil {
+func (this *ScreenThread) on_first_run() {
+	this.luaState = lua.NewState()
+	if this.luaState == nil {
 		panic("场景线程初始化Lua失败")
 	}
 
-	this.RandNum = 12345678912345678
+	this.randNum = 12345678912345678
 
 	// this.LuaState.SetGlobal("mysum", this.LuaState.NewFunction(Sum))
 
-	err := this.LuaState.DoFile("data/screens/main.lua")
+	err := this.luaState.DoFile("data/screens/main.lua")
 	if err != nil {
 		fmt.Println(err.Error())
 	}
 
-	RegLua_sct(this.LuaState)
+	RegLua_all(this.luaState)
 
-	this.Tolua_OnInitScreen()
+	println(this.Tolua_OnInitScreen())
 }
 
 // 响应线程退出
-func (this *Screen) on_end() {
-	if this.LuaState != nil {
-		this.LuaState.Close()
-		this.LuaState = nil
+func (this *ScreenThread) on_end() {
+	if this.luaState != nil {
+		this.luaState.Close()
+		this.luaState = nil
 	}
 }
 
 // 响应线程运行
-func (this *Screen) on_run() {
+func (this *ScreenThread) on_run() {
 }

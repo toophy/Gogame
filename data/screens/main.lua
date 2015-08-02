@@ -22,4 +22,6 @@ function OnInitScreen( a )
 	local etime = os.time()
 
 	print(etime-btime)
+
+	return 1
 end

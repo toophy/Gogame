@@ -10,7 +10,7 @@ type Event_open_screen struct {
 	Task
 	Screen_oid_    int32
 	Screen_name_   string
-	Screen_thread_ *Screen
+	Screen_thread_ *ScreenThread
 	Open           bool
 }
 
