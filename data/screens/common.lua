@@ -1,11 +1,5 @@
 module("common", package.seeall)
 
-
--- function mysub( a, b )
--- 	print(a.."-"..b.."="..(a-b))
--- 	return a-b
--- end
-
 -- 打印table
 function PrintTable(root)
 	local cache = {  [root] = "." }

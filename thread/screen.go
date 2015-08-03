@@ -14,7 +14,6 @@ type ScreenThread struct {
 	Thread
 
 	lastScreenId int32       // 最后一个场景id
-	randNum      int64       //测试64位整数
 	screens      ScreenMap   // screen 列表
 	luaState     *lua.LState // Lua实体
 }
@@ -64,14 +63,6 @@ func (this *ScreenThread) Del_screen(id int32) bool {
 	return false
 }
 
-func (this *ScreenThread) GetRandNum() int64 {
-	return this.randNum
-}
-
-func (this *ScreenThread) SetRandNum(a int64) {
-	this.randNum = a
-}
-
 // 响应线程首次运行
 func (this *ScreenThread) on_first_run() {
 
@@ -80,15 +71,6 @@ func (this *ScreenThread) on_first_run() {
 		println(errInit.Error())
 		return
 	}
-
-	this.randNum = 12345678912345678
-
-	// this.LuaState.SetGlobal("mysum", this.LuaState.NewFunction(Sum))
-
-	// err := this.luaState.DoFile("data/screens/main.lua")
-	// if err != nil {
-	// 	fmt.Println(err.Error())
-	// }
 
 	println(this.Tolua_OnInitScreen())
 }
