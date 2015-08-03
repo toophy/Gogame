@@ -3,6 +3,7 @@ package thread
 import (
 	//"fmt"
 	"errors"
+	"github.com/toophy/Gogame/help"
 	lua "github.com/toophy/gopher-lua"
 	"sync"
 	"time"
@@ -80,7 +81,7 @@ func (this *Master) Wait_thread_over() {
 			} else if this.threadCount == 1 {
 				n := time.Duration(time.Now().UnixNano())
 				this.Task_push(&Event_close_thread{
-					Task: Task{
+					Task: help.Task{
 						Id_:       3,
 						Start_:    n + 2*time.Second,
 						Interval_: time.Second,
@@ -108,34 +109,8 @@ func (this *Master) on_first_run() {
 		sc1.Run_thread()
 
 		n := time.Duration(time.Now().UnixNano())
-		sc1.Task_push(&Event_open_screen{
-			Task: Task{
-				Id_:       1,
-				Start_:    n + time.Second,
-				Interval_: time.Second,
-				Iterate_:  0,
-			},
-			Screen_oid_:    1,
-			Screen_name_:   "",
-			Screen_thread_: sc1,
-			Open:           true,
-		})
-
-		sc1.Task_push(&Event_open_screen{
-			Task: Task{
-				Id_:       2,
-				Start_:    n + 5*time.Second,
-				Interval_: time.Second,
-				Iterate_:  0,
-			},
-			Screen_oid_:    1,
-			Screen_name_:   "",
-			Screen_thread_: sc1,
-			Open:           false,
-		})
-
 		sc1.Task_push(&Event_close_thread{
-			Task: Task{
+			Task: help.Task{
 				Id_:       3,
 				Start_:    n + 10*time.Second,
 				Interval_: time.Second,

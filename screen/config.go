@@ -1,9 +1,10 @@
 package screen
 
 type Config struct {
-	Name   string
-	Width  int32
-	Height int32
+	Name    string
+	ModName string
+	Width   int32
+	Height  int32
 }
 
 type ScreensConfig struct {
@@ -18,7 +19,7 @@ func init() {
 
 func (this *ScreensConfig) LoadScreenConfig(f string) bool {
 	this.config = make(map[int32]*Config)
-	this.config[1] = &Config{Name: "洛阳", Width: 100, Height: 100}
+	this.config[1] = &Config{Name: "卧龙山庄", ModName: "woLongShanZhuang", Width: 100, Height: 100}
 	return true
 }
 

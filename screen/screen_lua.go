@@ -1,4 +1,4 @@
-package thread
+package screen
 
 import (
 	lua "github.com/toophy/gopher-lua"
@@ -10,7 +10,7 @@ func RegLua_all(L *lua.LState) error {
 	type regLuaFunc func(string, *lua.LState) error
 
 	regLuaStructs := map[string]regLuaFunc{
-		"ScreenThread": regLua_screen_thread,
+		"Screen": regLua_screen,
 	}
 
 	for k, _ := range regLuaStructs {
@@ -20,16 +20,16 @@ func RegLua_all(L *lua.LState) error {
 	return nil
 }
 
-// 向Lua注册结构 : ScreenThread
-func regLua_screen_thread(struct_name string, L *lua.LState) error {
+// 向Lua注册结构 : Screen
+func regLua_screen(struct_name string, L *lua.LState) error {
 
 	mt := L.NewTypeMetatable(struct_name)
 	L.SetGlobal(struct_name, mt)
 
 	// 检查Lua首个参数是不是对象指针
-	check := func(L *lua.LState) *ScreenThread {
+	check := func(L *lua.LState) *Screen {
 		ud := L.CheckUserData(1)
-		if v, ok := ud.Value.(*ScreenThread); ok {
+		if v, ok := ud.Value.(*Screen); ok {
 			return v
 		}
 		L.ArgError(1, struct_name+" expected")
@@ -45,15 +45,12 @@ func regLua_screen_thread(struct_name string, L *lua.LState) error {
 
 		map[string]lua.LGFunction{
 
-			// 增加场景
-			"Add_screen": func(L *lua.LState) int {
+			"Get_data": func(L *lua.LState) int {
 				p := check(L)
-				name := L.CheckString(2)
-				oid := int32(L.CheckInt(3))
 
-				ret := p.Add_screen(name, oid)
+				ret := p.Get_data()
 
-				L.Push(lua.LBool(ret))
+				L.Push(ret)
 				return 1
 			},
 		}))

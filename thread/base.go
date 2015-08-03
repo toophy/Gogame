@@ -3,6 +3,7 @@ package thread
 import (
 	"errors"
 	//"fmt"
+	"github.com/toophy/Gogame/jiekou"
 	"sync"
 	"time"
 )
@@ -38,14 +39,13 @@ type IThread interface {
 	Run_thread()                                     // 运行线程
 	Get_thread_id() int32                            // 获取线程ID
 	Get_thread_name() string                         // 获取线程名称
-	pre_close_thread()                               // 预备关闭线程
-	on_first_run()                                   // 首次运行(在 on_run 前面)
-	on_run()                                         // 线程运行部分
-	on_end()                                         // 线程结束回调
-
-	Task_push(task ITask)                   // 任务推送
-	Task_remove(id interface{})             // 任务删除
-	Task_cancel(id interface{}) (err error) // 任务取消
+	Task_push(task jiekou.ITask)                     // 任务推送
+	Task_remove(id interface{})                      // 任务删除
+	Task_cancel(id interface{}) (err error)          // 任务取消
+	pre_close_thread()                               // -- 只允许thread调用 : 预备关闭线程
+	on_first_run()                                   // -- 只允许thread调用 : 首次运行(在 on_run 前面)
+	on_run()                                         // -- 只允许thread调用 : 线程运行部分
+	on_end()                                         // -- 只允许thread调用 : 线程结束回调
 }
 
 // 线程基本功能
@@ -61,7 +61,7 @@ type Thread struct {
 	pre_stop    bool                            // 预备停止
 	mutex       sync.RWMutex                    // 任务读写锁
 	ticks       map[time.Duration][]interface{} // 任务定时器
-	tasks       map[interface{}]ITask           // 任务列表
+	tasks       map[interface{}]jiekou.ITask    // 任务列表
 	HandleError func(error)                     // 任务异常错误
 	self        IThread                         // 自己, 初始化之后, 不要操作
 	first_run   bool                            // 线程首次运行
@@ -83,7 +83,7 @@ func (this *Thread) Init_thread(self IThread, id int32, name string, heart_time 
 	this.last_time = time.Now().UnixNano() / (1000 * 1000)
 	this.heart_rate = 1.0
 	this.ticks = make(map[time.Duration][]interface{})
-	this.tasks = make(map[interface{}]ITask)
+	this.tasks = make(map[interface{}]jiekou.ITask)
 	this.self = self
 	this.first_run = true
 
@@ -153,7 +153,7 @@ func (this *Thread) pre_close_thread() {
 }
 
 // 投递任务
-func (this *Thread) Task_push(task ITask) {
+func (this *Thread) Task_push(task jiekou.ITask) {
 	this.mutex.Lock()
 	defer this.mutex.Unlock()
 	id := task.Id()
@@ -182,7 +182,7 @@ func (this *Thread) Task_cancel(id interface{}) (err error) {
 }
 
 // 执行一个任务
-func (this *Thread) task_exec(task ITask) (err error) {
+func (this *Thread) task_exec(task jiekou.ITask) (err error) {
 	this.mutex.Lock()
 	defer func() {
 		this.mutex.Unlock()

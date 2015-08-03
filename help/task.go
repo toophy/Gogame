@@ -1,22 +1,8 @@
-package thread
+package help
 
 import (
 	"time"
 )
-
-// 线程任务接口
-type ITask interface {
-	// Start time
-	Start() time.Duration
-	SetStart(time.Duration)
-	// interval of test executing, effective with Iterate() returns none-zero
-	Interval() time.Duration
-	// repeating times, 0 means don't repeat
-	Iterate() int
-	Id() interface{}
-	Exec() error
-	Cancel() error
-}
 
 // 线程任务
 type Task struct {

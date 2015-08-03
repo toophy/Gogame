@@ -2,12 +2,12 @@ package thread
 
 import (
 	"errors"
-	//"fmt"
+	"github.com/toophy/Gogame/help"
 )
 
 // 事件 : 场景增/删
 type Event_open_screen struct {
-	Task
+	help.Task
 	Screen_oid_    int32
 	Screen_name_   string
 	Screen_thread_ *ScreenThread

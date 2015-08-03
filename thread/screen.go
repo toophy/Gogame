@@ -45,8 +45,8 @@ func (this *ScreenThread) Init_screen_thread(id int32, name string, heart_time i
 // 增加场景
 func (this *ScreenThread) Add_screen(name string, oid int32) bool {
 	a := new(screen.Screen)
-	a.Load(name, this.lastScreenId, 1)
-	this.screens[1] = a
+	a.Load(name, this.lastScreenId, 1, this)
+	this.screens[this.lastScreenId] = a
 
 	this.lastScreenId++
 
@@ -66,7 +66,7 @@ func (this *ScreenThread) Del_screen(id int32) bool {
 // 响应线程首次运行
 func (this *ScreenThread) on_first_run() {
 
-	errInit := this.ReloadLuaState()
+	errInit := this.reloadLuaState()
 	if errInit != nil {
 		println(errInit.Error())
 		return
@@ -88,7 +88,7 @@ func (this *ScreenThread) on_run() {
 }
 
 // 初始化LuaState, 可以用来 Reload LuaState
-func (this *ScreenThread) ReloadLuaState() error {
+func (this *ScreenThread) reloadLuaState() error {
 
 	if this.luaState != nil {
 		this.luaState.Close()
@@ -101,10 +101,15 @@ func (this *ScreenThread) ReloadLuaState() error {
 	}
 
 	RegLua_all(this.luaState)
+	screen.RegLua_all(this.luaState)
 
 	// 加载所有 screens 文件夹里面的 *.lua 文件
-	this.luaState.Require("data/screens/main")
-	this.luaState.Require("data/screens/common")
+	this.luaState.RequireDir("data/screens")
 
 	return nil
+}
+
+// !!!只能获取, 不准许保存指针, 获取LState
+func (this *ScreenThread) GetLuaState() *lua.LState {
+	return this.luaState
 }

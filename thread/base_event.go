@@ -2,12 +2,12 @@ package thread
 
 import (
 	"errors"
-	//"fmt"
+	"github.com/toophy/Gogame/help"
 )
 
 // 事件 : 线程关闭
 type Event_close_thread struct {
-	Task
+	help.Task
 	Master IThread
 }
 
