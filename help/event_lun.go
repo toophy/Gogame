@@ -72,39 +72,47 @@ func (this *EvnetLun) Setup(unit_time int64) {
 }
 
 // 投递事件
-func (this *EvnetPool) Push(e IEvent) bool {
+func (this *EvnetPool) Push(e IEvent, name bool) bool {
 	// 有同名事件存在
-	if len(e.Name()) > 0 {
+	if name && len(e.Name()) > 0 {
 		if _, ok := this.Names[e.Name()]; ok {
 			return false
 		}
-
 	}
 
 	time := e.GetStart()
 	ret := false
 
+	list_head := int32(0)
+	remain_time := int64(0)
+	list_id := int32(0)
+
 	if time < Evt_lay_1_max {
-		ret = this.PushToList(e, time>>Evt_lay_1_bit, 0, Evt_lay_1_sn)
+		list_head = time >> Evt_lay_1_bit
+		remain_time = 0
+		list_id = Evt_lay_1_sn
 	} else if time < Evt_lay_2_max {
-		ret = this.PushToList(e, time>>Evt_lay_2_bit, time&Evt_lay_2_mask-this.Lists[Evt_lay_2_sn-1].RemainTime, Evt_lay_2_sn)
+		list_head = time >> Evt_lay_2_bit
+		remain_time = time&Evt_lay_2_mask - this.Lists[Evt_lay_2_sn-1].RemainTime
+		list_id = Evt_lay_2_sn
 	} else if time < Evt_lay_3_max {
-		ret = this.PushToList(3, time>>Evt_lay_3_bit, time&Evt_lay_3_mask-this.Lists[Evt_lay_3_sn-1].RemainTime, Evt_lay_3_sn)
+		list_head = time >> Evt_lay_3_bit
+		remain_time = time&Evt_lay_3_mask - this.Lists[Evt_lay_3_sn-1].RemainTime
+		list_id = Evt_lay_3_sn
 	} else if time < Evt_lay_4_max {
-		ret = this.PushToList(3, time>>Evt_lay_4_bit, time&Evt_lay_4_mask-this.Lists[Evt_lay_4_sn-1].RemainTime, Evt_lay_4_sn)
+		list_head = time >> Evt_lay_4_bit
+		remain_time = time&Evt_lay_4_mask - this.Lists[Evt_lay_4_sn-1].RemainTime
+		list_id = Evt_lay_4_sn
 	} else if time < Evt_lay_5_max {
-		ret = this.PushToList(3, time>>Evt_lay_5_bit, time&Evt_lay_5_mask-this.Lists[Evt_lay_5_sn-1].RemainTime, Evt_lay_5_sn)
+		list_head = time >> Evt_lay_5_bit
+		remain_time = time&Evt_lay_5_mask - this.Lists[Evt_lay_5_sn-1].RemainTime
+		list_id = Evt_lay_5_sn
+	} else {
+		list_head = time >> Evt_lay_5_bit
+		remain_time = time&Evt_lay_5_mask - this.Lists[Evt_lay_5_sn-1].RemainTime
+		list_id = Evt_lay_5_sn
 	}
 
-	if ret {
-		this.Names[e.Name()] = e
-	}
-
-	return ret
-}
-
-// 投递事件给时间轮盘
-func (this *EvnetLun) PushToList(e IEvent, list_head int32, remain_time int64, list_id int32) {
 	list_head = this.Lists[list_id-1].CurrHead + list_head
 
 	if list_head > (Evt_uc - 1) {
@@ -112,4 +120,10 @@ func (this *EvnetLun) PushToList(e IEvent, list_head int32, remain_time int64, l
 	}
 
 	e.Time_push(this.Lists[list_id-1].Headers[list_head])
+
+	if name && ret && len(e.Name()) > 0 {
+		this.Names[e.Name()] = e
+	}
+
+	return ret
 }
