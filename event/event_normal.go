@@ -8,24 +8,35 @@ type EventNormal struct {
 	pre_obj    IEvent     // 对象前一个
 	next_obj   IEvent     // 对象后一个
 	home       IEventHome // 事件之家
-	touch_time int64      // 定时器触发时间戳
+	touch_time uint64     // 定时器触发时间戳
+}
+
+func (this *EventNormal) Init(name string) {
+	this.name = name
+	this.pre_timer = this
+	this.pre_obj = this
+	this.next_timer = this
+	this.next_obj = this
 }
 
 func (this *EventNormal) IsHeader() bool {
 	return false
 }
 
-func (this *EventNormal) Exec() {
+func (this *EventNormal) Exec() bool {
+	println("Normal Exec")
+	return true
 }
 
-func (this *EventNormal) Remove() bool {
+func (this *EventNormal) Remove(self IEvent) bool {
 	if this.home == nil {
 		return false
 	}
 
 	this.home.PopEvent(this.name)
-	this.PopTimer()
-	this.PopObj()
+	this.PopTimer(self)
+	this.PopObj(self)
+	this.home = nil
 
 	return true
 }
@@ -34,26 +45,11 @@ func (this *EventNormal) GetName() string {
 	return this.name
 }
 
-func (this *EventNormal) Init() {
-	this.pre_timer = this
-	this.pre_obj = this
-	this.next_timer = this
-	this.next_obj = this
-}
-
-func (this *EventNormal) PushTimer(header IEvent) {
-	old_pre := header.getPreTimer()
-	header.setPreTimer(this)
-	this.setNextTimer(header)
-	this.setPreTimer(old_pre)
-	old_pre.setNextTimer(this)
-}
-
-func (this *EventNormal) PopTimer() {
+func (this *EventNormal) PopTimer(self IEvent) {
 	this.getPreTimer().setNextTimer(this.getNextTimer())
 	this.getNextTimer().setPreTimer(this.getPreTimer())
-	this.setNextTimer(this)
-	this.setPreTimer(this)
+	this.setNextTimer(self)
+	this.setPreTimer(self)
 }
 
 func (this *EventNormal) getPreTimer() IEvent {
@@ -72,19 +68,11 @@ func (this *EventNormal) setNextTimer(e IEvent) {
 	this.next_timer = e
 }
 
-func (this *EventNormal) PushObj(header IEvent) {
-	old_pre := header.getPreObj()
-	header.setPreObj(this)
-	this.setNextObj(header)
-	this.setPreObj(old_pre)
-	old_pre.setNextObj(this)
-}
-
-func (this *EventNormal) PopObj() {
+func (this *EventNormal) PopObj(self IEvent) {
 	this.getPreObj().setNextObj(this.getNextObj())
 	this.getNextObj().setPreObj(this.getPreObj())
-	this.setNextObj(this)
-	this.setPreObj(this)
+	this.setNextObj(self)
+	this.setPreObj(self)
 }
 
 func (this *EventNormal) getPreObj() IEvent {
@@ -111,6 +99,14 @@ func (this *EventNormal) GetEventHome() IEventHome {
 	return this.home
 }
 
-func (this *EventNormal) GetTouchTime() int64 {
+func (this *EventNormal) GetTouchTime() uint64 {
 	return this.touch_time
+}
+
+func (this *EventNormal) SetTouchTime(t uint64) {
+	this.touch_time = t
+}
+
+func (this *EventNormal) SetDelayTime(d uint64, c uint64) {
+	this.touch_time = c + d
 }

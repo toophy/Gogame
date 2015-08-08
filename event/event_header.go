@@ -6,15 +6,21 @@ type EventHeader struct {
 	next IEvent // 后一个
 }
 
-////////////////////////////////////////
+func (this *EventHeader) Init(name string) {
+	this.pre = this
+	this.next = this
+}
+
 func (this *EventHeader) IsHeader() bool {
 	return true
 }
 
-func (this *EventHeader) Exec() {
+func (this *EventHeader) Exec() bool {
+	println("Header Exec")
+	return true
 }
 
-func (this *EventHeader) Remove() bool {
+func (this *EventHeader) Remove(self IEvent) bool {
 	return false
 }
 
@@ -22,15 +28,7 @@ func (this *EventHeader) GetName() string {
 	return ""
 }
 
-func (this *EventHeader) Init() {
-	this.pre = this
-	this.next = this
-}
-
-func (this *EventHeader) PushTimer(header IEvent) {
-}
-
-func (this *EventHeader) PopTimer() {
+func (this *EventHeader) PopTimer(self IEvent) {
 }
 
 func (this *EventHeader) getPreTimer() IEvent {
@@ -49,10 +47,7 @@ func (this *EventHeader) setNextTimer(e IEvent) {
 	this.next = e
 }
 
-func (this *EventHeader) PushObj(header IEvent) {
-}
-
-func (this *EventHeader) PopObj() {
+func (this *EventHeader) PopObj(self IEvent) {
 }
 
 func (this *EventHeader) getPreObj() IEvent {
@@ -78,6 +73,12 @@ func (this *EventHeader) GetEventHome() IEventHome {
 	return nil
 }
 
-func (this *EventNormal) GetTouchTime() int64 {
-	return -1
+func (this *EventHeader) GetTouchTime() uint64 {
+	return 0
+}
+
+func (this *EventHeader) SetTouchTime(t uint64) {
+}
+
+func (this *EventHeader) SetDelayTime(d uint64, c uint64) {
 }
