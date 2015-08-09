@@ -35,9 +35,3 @@ type IEventHome interface {
 	PopEvent(name string)        // 弹出别名
 	ShowLay1()                   // 显示所有事件
 }
-
-// 定时器关联对象
-type IEventObj interface {
-	PushEvent(e IEvent) bool // 压入关联事件
-	RemoveAllEvents() bool   // 删除所有关联事件
-}

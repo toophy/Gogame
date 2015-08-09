@@ -5,30 +5,30 @@ import (
 	"fmt"
 )
 
+const (
+	Evt_gap_time  = 16     // 心跳时间(毫秒)
+	Evt_gap_bit   = 4      // 心跳时间对应得移位(快速运算使用)
+	Evt_lay1_time = 160000 // 第一层事件池最大支持时间(毫秒)
+)
+
 type EventHome struct {
-	Removes    []IEvent          // 等待删除的事件
 	Lay1       []IEvent          // 第一层事件池
 	Lay2       map[uint64]IEvent // 第二层事件池
 	Names      map[string]IEvent // 别名
-	gap        uint64            // 粒度
-	gapBit     uint64            // 粒度移位
 	lay1Size   uint64            // 第一层池容量
 	lay1Cursor uint64            // 第一层游标
 	runCount   uint64            // 运行次数
 }
 
 func (this *EventHome) Init(lay1_time uint64) error {
-	if lay1_time < 32 || lay1_time > 320000 {
-		return errors.New("[E] 第一层支持32毫秒到320000毫秒")
+	if lay1_time < Evt_gap_time || lay1_time > Evt_lay1_time {
+		return errors.New("[E] 第一层支持16毫秒到160000毫秒")
 	}
 	if this.Names == nil {
-		this.gap = 32   // 32毫秒
-		this.gapBit = 5 // 2^5 => 32
-		this.lay1Size = lay1_time >> this.gapBit
+		this.lay1Size = lay1_time >> Evt_gap_bit
 		this.lay1Cursor = 0
 		this.runCount = 1
 
-		this.Removes = make([]IEvent, 1024)
 		this.Lay1 = make([]IEvent, this.lay1Size)
 		this.Lay2 = make(map[uint64]IEvent, 0)
 		this.Names = make(map[string]IEvent, 0)
@@ -57,7 +57,7 @@ func (this *EventHome) PushEvent(a IEvent) bool {
 	}
 
 	// 计算放在那一层
-	pos := a.GetTouchTime() >> this.gapBit
+	pos := (a.GetTouchTime() + Evt_gap_time - 1) >> Evt_gap_bit
 	if pos < 0 {
 		pos = 1
 	}
@@ -87,15 +87,6 @@ func (this *EventHome) PushEvent(a IEvent) bool {
 	a.setPreTimer(old_pre)
 	old_pre.setNextTimer(a)
 	this.ShowLay1()
-
-	switch a.(type) {
-	case *EventNormal:
-		println("push Normal Event")
-	case *EventHeader:
-		println("push Header Event")
-	default:
-		println("push Other Event")
-	}
 
 	if check_name {
 		this.Names[a.GetName()] = a
@@ -148,7 +139,6 @@ func (this *EventHome) runExec(header IEvent) {
 			// 防止使用者没有删除使用过的事件, 造成死循环, 该事件, 用户要么重新投递到其他链表, 要么删除
 			evt.Remove(evt)
 		}
-		fmt.Println("runExec 6")
 	}
 }
 
@@ -160,7 +150,7 @@ func (this *EventHome) PrintAll() {
 		第一层池容量:%d
 		第一层游标:%d
 		运行次数%d
-		`, this.gap, this.gapBit, this.lay1Size, this.lay1Cursor, this.runCount)
+		`, Evt_gap_time, Evt_gap_bit, this.lay1Size, this.lay1Cursor, this.runCount)
 
 	for k, v := range this.Names {
 		fmt.Println(k, v)
@@ -168,16 +158,4 @@ func (this *EventHome) PrintAll() {
 }
 
 func (this *EventHome) ShowLay1() {
-	for i := uint64(0); i < this.lay1Size; i++ {
-		if !this.Lay1[i].getNextTimer().IsHeader() {
-			switch this.Lay1[i].getNextTimer().(type) {
-			case *EventNormal:
-				println("show Normal Event")
-			case *EventHeader:
-				println("show Header Event")
-			default:
-				println("show Other Event")
-			}
-		}
-	}
 }
