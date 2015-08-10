@@ -3,7 +3,7 @@ package thread
 import (
 	//"fmt"
 	"errors"
-	"github.com/toophy/Gogame/help"
+
 	lua "github.com/toophy/gopher-lua"
 	"sync"
 	"time"
@@ -24,7 +24,7 @@ var myMaster *Master = nil
 func GetMaster() *Master {
 	if myMaster == nil {
 		myMaster = &Master{}
-		err := myMaster.Init_master_thread(myMaster, "主线程", 100)
+		err := myMaster.Init_master_thread(myMaster, "主线程", 100, Evt_lay1_time)
 		if err != nil {
 			panic(err.Error())
 		}
@@ -34,8 +34,8 @@ func GetMaster() *Master {
 }
 
 // 初始化主线程
-func (this *Master) Init_master_thread(self IThread, name string, heart_time int64) error {
-	err := this.Init_thread(self, Tid_master, name, heart_time)
+func (this *Master) Init_master_thread(self IThread, name string, heart_time int64, lay1_time uint64) error {
+	err := this.Init_thread(self, Tid_master, name, heart_time, lay1_time)
 	if err == nil {
 		this.threadCount = 0
 		this.threadIds = make(map[int32]IThread, 0)
@@ -79,16 +79,10 @@ func (this *Master) Wait_thread_over() {
 				time.Sleep(2 * time.Second)
 				return
 			} else if this.threadCount == 1 {
-				n := time.Duration(time.Now().UnixNano())
-				this.Task_push(&Event_close_thread{
-					Task: help.Task{
-						Id_:       3,
-						Start_:    n + 2*time.Second,
-						Interval_: time.Second,
-						Iterate_:  0,
-					},
-					Master: this,
-				})
+				evt := &Event_close_thread{}
+				evt.Init("", 2000)
+				evt.Master = this
+				this.PostEvent(evt)
 			}
 
 			this.threadLock.Unlock()
@@ -104,20 +98,15 @@ func (this *Master) on_first_run() {
 		panic(errInit.Error())
 	}
 
-	sc1, err := New_screen_thread(Tid_screen_1, "场景线程1", 100)
+	sc1, err := New_screen_thread(Tid_screen_1, "场景线程1", 100, Evt_lay1_time)
 	if err == nil && sc1 != nil {
 		sc1.Run_thread()
 
-		n := time.Duration(time.Now().UnixNano())
-		sc1.Task_push(&Event_close_thread{
-			Task: help.Task{
-				Id_:       3,
-				Start_:    n + 10*time.Second,
-				Interval_: time.Second,
-				Iterate_:  0,
-			},
-			Master: sc1,
-		})
+		/*evt := &Event_close_thread{}
+		evt.Init("",10000)
+		evt.Master = sc1
+		sc1.PostEvent(evt)*/
+
 	} else {
 		if err != nil {
 			println("[E] 新建场景线程失败:" + err.Error())

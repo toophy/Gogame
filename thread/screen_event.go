@@ -1,13 +1,12 @@
 package thread
 
 import (
-	"errors"
-	"github.com/toophy/Gogame/help"
+	"github.com/toophy/Gogame/event"
 )
 
 // 事件 : 场景增/删
 type Event_open_screen struct {
-	help.Task
+	event.EventNormal
 	Screen_oid_    int32
 	Screen_name_   string
 	Screen_thread_ *ScreenThread
@@ -15,16 +14,20 @@ type Event_open_screen struct {
 }
 
 // 事件执行
-func (t *Event_open_screen) Exec() error {
-	if t.Open {
-		if t.Screen_thread_.Add_screen(t.Screen_name_, t.Screen_oid_) {
-			return nil
+func (this *Event_open_screen) Exec() bool {
+	if this.Open {
+		if this.Screen_thread_.Add_screen(this.Screen_name_, this.Screen_oid_) {
+			println("打开场景成功")
+			return true
 		}
-		return errors.New("打开场景失败")
+		println("打开场景失败")
+		return true
 	}
 
-	if t.Screen_thread_.Del_screen(t.Screen_oid_) {
-		return nil
+	if this.Screen_thread_.Del_screen(this.Screen_oid_) {
+		println("关闭场景成功")
+		return true
 	}
-	return errors.New("关闭场景失败")
+	println("关闭场景失败")
+	return true
 }

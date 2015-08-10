@@ -1,22 +1,22 @@
 package thread
 
 import (
-	"errors"
-	"github.com/toophy/Gogame/help"
+	"github.com/toophy/Gogame/event"
 )
 
 // 事件 : 线程关闭
 type Event_close_thread struct {
-	help.Task
+	event.EventNormal
 	Master IThread
 }
 
 // 事件执行
-func (t *Event_close_thread) Exec() error {
-	if t.Master != nil {
-		t.Master.pre_close_thread()
-		return nil
+func (this *Event_close_thread) Exec() bool {
+	if this.Master != nil {
+		this.Master.pre_close_thread()
+		return true
 	}
 
-	return errors.New("没找到线程")
+	println("没找到线程")
+	return true
 }

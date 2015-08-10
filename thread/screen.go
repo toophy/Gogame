@@ -19,9 +19,9 @@ type ScreenThread struct {
 }
 
 // 新建场景线程
-func New_screen_thread(id int32, name string, heart_time int64) (*ScreenThread, error) {
+func New_screen_thread(id int32, name string, heart_time int64, lay1_time uint64) (*ScreenThread, error) {
 	a := new(ScreenThread)
-	err := a.Init_screen_thread(id, name, heart_time)
+	err := a.Init_screen_thread(id, name, heart_time, lay1_time)
 	if err == nil {
 		return a, nil
 	}
@@ -29,11 +29,11 @@ func New_screen_thread(id int32, name string, heart_time int64) (*ScreenThread, 
 }
 
 // 初始化场景线程
-func (this *ScreenThread) Init_screen_thread(id int32, name string, heart_time int64) error {
+func (this *ScreenThread) Init_screen_thread(id int32, name string, heart_time int64, lay1_time uint64) error {
 	if id < Tid_screen_1 || id > Tid_screen_9 {
 		return errors.New("[E] 线程ID超出范围 [Tid_screen_1,Tid_screen_9]")
 	}
-	err := this.Init_thread(this, id, name, heart_time)
+	err := this.Init_thread(this, id, name, heart_time, lay1_time)
 	if err == nil {
 		this.screens = make(ScreenMap, 0)
 		this.lastScreenId = (id - 1) * 10000
@@ -72,7 +72,7 @@ func (this *ScreenThread) on_first_run() {
 		return
 	}
 
-	println(this.Tolua_OnInitScreen())
+	this.Tolua_OnInitScreen()
 }
 
 // 响应线程退出

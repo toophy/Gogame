@@ -27,10 +27,10 @@ func (this *ScreenThread) Tolua_OnInitScreen() (ret int) {
 
 	// 调用Lua脚本函数
 	if err := this.luaState.CallByParam(lua.P{
-		Fn:      this.luaState.GetGlobal("common.mysub"), // 调用的Lua函数
-		NRet:    1,                                       // 返回值的数量
-		Protect: true,                                    // 保护?
-	}, lua.LNumber(1), lua.LNumber(2)); err != nil {
+		Fn:      this.luaState.GetFunction("main", "OnInitScreen"), // 调用的Lua函数
+		NRet:    1,                                                 // 返回值的数量
+		Protect: true,                                              // 保护?
+	}, this.GetLUserData("ScreenThread", this)); err != nil {
 		println("panic c")
 		panic(err)
 	}

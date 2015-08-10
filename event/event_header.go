@@ -6,7 +6,7 @@ type EventHeader struct {
 	next IEvent // 后一个
 }
 
-func (this *EventHeader) Init(name string) {
+func (this *EventHeader) Init(name string, t uint64) {
 	this.pre = this
 	this.next = this
 }
@@ -20,57 +20,40 @@ func (this *EventHeader) Exec() bool {
 	return true
 }
 
-func (this *EventHeader) Remove(self IEvent) bool {
-	return false
-}
-
 func (this *EventHeader) GetName() string {
 	return ""
 }
 
-func (this *EventHeader) PopTimer(self IEvent) {
-}
-
-func (this *EventHeader) getPreTimer() IEvent {
+func (this *EventHeader) GetPreTimer() IEvent {
 	return this.pre
 }
 
-func (this *EventHeader) getNextTimer() IEvent {
+func (this *EventHeader) GetNextTimer() IEvent {
 	return this.next
 }
 
-func (this *EventHeader) setPreTimer(e IEvent) {
+func (this *EventHeader) SetPreTimer(e IEvent) {
 	this.pre = e
 }
 
-func (this *EventHeader) setNextTimer(e IEvent) {
+func (this *EventHeader) SetNextTimer(e IEvent) {
 	this.next = e
 }
 
-func (this *EventHeader) PopObj(self IEvent) {
-}
-
-func (this *EventHeader) getPreObj() IEvent {
+func (this *EventHeader) GetPreObj() IEvent {
 	return this.pre
 }
 
-func (this *EventHeader) getNextObj() IEvent {
+func (this *EventHeader) GetNextObj() IEvent {
 	return this.next
 }
 
-func (this *EventHeader) setPreObj(e IEvent) {
+func (this *EventHeader) SetPreObj(e IEvent) {
 	this.pre = e
 }
 
-func (this *EventHeader) setNextObj(e IEvent) {
+func (this *EventHeader) SetNextObj(e IEvent) {
 	this.next = e
-}
-
-func (this *EventHeader) SetEventHome(h IEventHome) {
-}
-
-func (this *EventHeader) GetEventHome() IEventHome {
-	return nil
 }
 
 func (this *EventHeader) GetTouchTime() uint64 {

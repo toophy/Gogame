@@ -7,28 +7,23 @@ type EventObj struct {
 // 必须调用
 func (this *EventObj) InitEventHeader() {
 	this.event_header = &EventHeader{}
-	this.event_header.Init("")
+	this.event_header.Init("", 100)
 }
 
-func (this *EventObj) PushEvent(e IEvent) bool {
+// 压入定时器事件
+func (this *EventObj) PostEvent(e IEvent) bool {
 	if e != nil && !e.IsHeader() {
-		old_pre := this.event_header.getPreObj()
-		this.event_header.setPreObj(e)
-		e.setNextObj(this.event_header)
-		e.setPreObj(old_pre)
-		old_pre.setNextObj(e)
+		old_pre := this.event_header.GetPreObj()
+		this.event_header.SetPreObj(e)
+		e.SetNextObj(this.event_header)
+		e.SetPreObj(old_pre)
+		old_pre.SetNextObj(e)
 		return true
 	}
 	return false
 }
 
-func (this *EventObj) RemoveAllEvents() {
-	for {
-		// 每次得到链表第一个事件(非)
-		evt := this.event_header.getNextObj()
-		if evt.IsHeader() {
-			break
-		}
-		evt.Remove(evt)
-	}
+// 获取事件列表头
+func (this *EventObj) GetEventHeader() IEvent {
+	return this.event_header
 }

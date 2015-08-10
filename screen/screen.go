@@ -3,13 +3,14 @@ package screen
 import (
 	"fmt"
 	"github.com/toophy/Gogame/actor"
+	"github.com/toophy/Gogame/event"
 	"github.com/toophy/Gogame/help"
 	"github.com/toophy/Gogame/jiekou"
 	lua "github.com/toophy/gopher-lua"
-	"time"
 )
 
 type Screen struct {
+	event.EventObj
 	Name    string
 	Id      int32
 	Oid     int32
@@ -19,6 +20,7 @@ type Screen struct {
 }
 
 func (this *Screen) Load(name string, id int32, oid int32, t jiekou.IScreenThread) bool {
+	this.InitEventHeader()
 	config := screen_config.GetScreenConfig(oid)
 	if config == nil {
 		fmt.Printf("场景%s加载失败: 没有找到场景模板(%d)\n", name, oid)
@@ -43,16 +45,10 @@ func (this *Screen) Load(name string, id int32, oid int32, t jiekou.IScreenThrea
 	fmt.Printf("场景%s加载成功\n", this.Name)
 	this.Tolua_screen_init()
 
-	n := time.Duration(time.Now().UnixNano())
-	this.thread.Task_push(&Event_heart_beat{
-		Task: help.Task{
-			Id_:       100,
-			Start_:    n + 1*time.Second,
-			Interval_: 3 * time.Second,
-			Iterate_:  1,
-		},
-		Screen_: this,
-	})
+	evt := &Event_heart_beat{}
+	evt.Init("", 3000)
+	evt.Screen_ = this
+	this.thread.PostEvent(evt)
 
 	return true
 }
@@ -63,6 +59,7 @@ func (this *Screen) Load(name string, id int32, oid int32, t jiekou.IScreenThrea
 // 没有场景的精灵怎么进行操作呢?
 func (this *Screen) Unload() {
 	fmt.Printf("场景%s卸载成功\n", this.Name)
+	this.thread.RemoveEventList(this.GetEventHeader())
 	this.thread = nil
 	this.luaData = nil
 }
@@ -75,6 +72,11 @@ func (this *Screen) Get_data() lua.LValue {
 // !!! 获取的指针不能保存, 获取场景配置
 func (this *Screen) Get_config() *Config {
 	return screen_config.GetScreenConfig(this.Oid)
+}
+
+// 获取所在线程
+func (this *Screen) Get_thread() jiekou.IScreenThread {
+	return this.thread
 }
 
 // 登录地图

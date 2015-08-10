@@ -1,32 +1,24 @@
 package screen
 
 import (
-	"github.com/toophy/Gogame/help"
-	//"time"
-	"fmt"
+	"github.com/toophy/Gogame/event"
 )
 
 // 事件 : 场景心跳
 type Event_heart_beat struct {
-	help.Task
+	event.EventNormal
 	Screen_ *Screen
 }
 
 // 事件执行
-func (t *Event_heart_beat) Exec() error {
+func (this *Event_heart_beat) Exec() bool {
 
-	t.Screen_.Tolua_heart_beat()
-	fmt.Println("heart")
+	this.Screen_.Tolua_heart_beat()
 
-	// n := time.Duration(time.Now().UnixNano())
-	// t.Screen_.thread.Task_push(&Event_heart_beat{
-	// 	Task: help.Task{
-	// 		Id_:       t.Id_ + 1,
-	// 		Start_:    n + 1*time.Second,
-	// 		Interval_: time.Second,
-	// 		Iterate_:  1*time.Second,
-	// 	},
-	// 	Screen_: t.Screen_,
-	// })
-	return nil
+	evt := &Event_heart_beat{Screen_: this.Screen_}
+	evt.Init("", 3000)
+	this.Screen_.PostEvent(evt)
+	this.Screen_.Get_thread().PostEvent(evt)
+
+	return true
 }
