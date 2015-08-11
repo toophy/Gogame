@@ -70,23 +70,22 @@ func (this *Master) Release_run_thread(a IThread) {
 // 等待所有线程结束
 func (this *Master) Wait_thread_over() {
 	for {
-		select {
-		case <-time.Tick(10 * time.Second):
-			this.threadLock.Lock()
+		time.Sleep(10 * time.Second)
 
-			if this.threadCount <= 0 {
-				this.threadLock.Unlock()
-				time.Sleep(2 * time.Second)
-				return
-			} else if this.threadCount == 1 {
-				evt := &Event_close_thread{}
-				evt.Init("", 2000)
-				evt.Master = this
-				this.PostEvent(evt)
-			}
+		this.threadLock.Lock()
 
+		if this.threadCount <= 0 {
 			this.threadLock.Unlock()
+			time.Sleep(2 * time.Second)
+			return
+		} else if this.threadCount == 1 {
+			evt := &Event_close_thread{}
+			evt.Init("", 2000)
+			evt.Master = this
+			this.PostEvent(evt)
 		}
+
+		this.threadLock.Unlock()
 	}
 }
 
@@ -101,17 +100,22 @@ func (this *Master) on_first_run() {
 	sc1, err := New_screen_thread(Tid_screen_1, "场景线程1", 100, Evt_lay1_time)
 	if err == nil && sc1 != nil {
 		sc1.Run_thread()
-
-		/*evt := &Event_close_thread{}
-		evt.Init("",10000)
-		evt.Master = sc1
-		sc1.PostEvent(evt)*/
-
 	} else {
 		if err != nil {
-			println("[E] 新建场景线程失败:" + err.Error())
+			println("[E] 新建场景线程1失败:" + err.Error())
 		} else {
-			println("[E] 新建场景线程失败:")
+			println("[E] 新建场景线程1失败:")
+		}
+	}
+
+	sc2, err := New_screen_thread(Tid_screen_2, "场景线程2", 100, Evt_lay1_time)
+	if err == nil && sc2 != nil {
+		sc2.Run_thread()
+	} else {
+		if err != nil {
+			println("[E] 新建场景线程2失败:" + err.Error())
+		} else {
+			println("[E] 新建场景线程2失败:")
 		}
 	}
 }

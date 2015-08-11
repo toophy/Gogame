@@ -6,6 +6,7 @@ type IEvent interface {
 	IsHeader() bool             // 是链表头
 	Exec() bool                 // 执行
 	GetName() string            // 获取别名
+	IsEmpty() bool              // 是空列表
 	// 定时器链表
 	GetPreTimer() IEvent   // 获取前一个定时器事件
 	GetNextTimer() IEvent  // 获取下一个定时器事件
@@ -96,4 +97,8 @@ func (this *EventNormal) SetTouchTime(t uint64) {
 
 func (this *EventNormal) SetDelayTime(d uint64, c uint64) {
 	this.touch_time = c + d
+}
+
+func (this *EventNormal) IsEmpty() bool {
+	return true
 }

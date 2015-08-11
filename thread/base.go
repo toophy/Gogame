@@ -76,6 +76,8 @@ type Thread struct {
 	evt_lay1Cursor   uint64                  // 第一层游标
 	evt_lastRunCount uint64                  // 最近一次运行次数
 	evt_currRunCount uint64                  // 当前运行次数
+	evt_threadMsg    [Tid_last]event.IEvent  // 保存将要发给其他线程的事件(消息)
+	evt_recvMsg      event.EventHeader       // 接收线程间消息
 }
 
 // 初始化线程(必须调用)
@@ -120,6 +122,13 @@ func (this *Thread) Init_thread(self IThread, id int32, name string, heart_time 
 		this.evt_lay1[i].Init("", 100)
 	}
 
+	for i := 0; i < Tid_last; i++ {
+		this.evt_threadMsg[i] = new(event.EventHeader)
+		this.evt_threadMsg[i].Init("", 100)
+	}
+
+	this.evt_recvMsg.Init("", 100)
+
 	return nil
 }
 
@@ -139,14 +148,16 @@ func (this *Thread) Run_thread() {
 		this.self.on_first_run()
 
 		for {
-			select {
-			case <-time.Tick(next_time):
-				this.last_time = time.Now().UnixNano() / int64(time.Millisecond)
-				this.runEvents()
-				this.runOnce()
-				this.self.on_run()
-			}
+			time.Sleep(next_time)
+			this.last_time = time.Now().UnixNano() / int64(time.Millisecond)
+			this.runThreadMsg()
+			this.runEvents()
+			this.runOnce()
+			this.self.on_run()
 
+			this.sendThreadMsg()
+
+			// 计算下一次运行的时间
 			run_time = int64((time.Now().UnixNano() / int64(time.Millisecond)) - this.last_time)
 			if run_time >= this.heart_time {
 				run_time = this.heart_time - 10
@@ -238,6 +249,23 @@ func (this *Thread) PostEvent(a event.IEvent) bool {
 	return true
 }
 
+// 投递线程间消息
+func (this *Thread) PostThreadMsg(tid int32, a event.IEvent) bool {
+	if tid == this.Get_thread_id() {
+		return false
+	}
+	if tid >= Tid_master && tid < Tid_last {
+		header := this.evt_threadMsg[tid]
+		old_pre := header.GetPreTimer()
+		header.SetPreTimer(a)
+		a.SetNextTimer(header)
+		a.SetPreTimer(old_pre)
+		old_pre.SetNextTimer(a)
+		return true
+	}
+	return false
+}
+
 // 通过别名获取事件
 func (this *Thread) GetEvent(name string) event.IEvent {
 	if _, ok := this.evt_names[name]; ok {
@@ -280,8 +308,8 @@ func (this *Thread) PopTimer(e event.IEvent) {
 	if !e.IsHeader() {
 		e.GetPreTimer().SetNextTimer(e.GetNextTimer())
 		e.GetNextTimer().SetPreTimer(e.GetPreTimer())
-		e.SetNextTimer(e)
-		e.SetPreTimer(e)
+		e.SetNextTimer(nil)
+		e.SetPreTimer(nil)
 	}
 }
 
@@ -290,8 +318,36 @@ func (this *Thread) PopObj(e event.IEvent) {
 	if !e.IsHeader() {
 		e.GetPreObj().SetNextObj(e.GetNextObj())
 		e.GetNextObj().SetPreObj(e.GetPreObj())
-		e.SetNextObj(e)
-		e.SetPreObj(e)
+		e.SetNextObj(nil)
+		e.SetPreObj(nil)
+	}
+}
+
+// 接收并处理线程间消息
+func (this *Thread) runThreadMsg() {
+
+	G_thread_msg_pool.GetMsg(this.Get_thread_id(), &this.evt_recvMsg)
+
+	for {
+		// 每次得到链表第一个事件(非)
+		evt := header.GetNextTimer()
+		if evt.IsHeader() {
+			break
+		}
+
+		// 执行事件, 删除这个事件
+		evt.Exec()
+		this.PopTimer(evt)
+	}
+}
+
+// 发送消息间消息
+func (this *Thread) sendThreadMsg() {
+	for i := int32(Tid_master); i < Tid_last; i++ {
+		if !this.evt_threadMsg[i].IsEmpty() {
+			println("sendThreadMsg")
+			G_thread_msg_pool.PostMsg(i, this.evt_threadMsg[i])
+		}
 	}
 }
 

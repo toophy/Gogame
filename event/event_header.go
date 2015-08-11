@@ -65,3 +65,7 @@ func (this *EventHeader) SetTouchTime(t uint64) {
 
 func (this *EventHeader) SetDelayTime(d uint64, c uint64) {
 }
+
+func (this *EventHeader) IsEmpty() bool {
+	return this.pre == this.next
+}
