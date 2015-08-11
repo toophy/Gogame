@@ -4,7 +4,7 @@ package event
 type IEvent interface {
 	Init(name string, t uint64) // 初始化(name可以为空, t是触发时间)
 	IsHeader() bool             // 是链表头
-	Exec() bool                 // 执行
+	Exec(home interface{}) bool // 执行
 	GetName() string            // 获取别名
 	IsEmpty() bool              // 是空列表
 	// 定时器链表
@@ -46,7 +46,7 @@ func (this *EventNormal) IsHeader() bool {
 	return false
 }
 
-func (this *EventNormal) Exec() bool {
+func (this *EventNormal) Exec(home interface{}) bool {
 	println("Normal Exec")
 	return true
 }

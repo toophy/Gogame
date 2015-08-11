@@ -330,13 +330,13 @@ func (this *Thread) runThreadMsg() {
 
 	for {
 		// 每次得到链表第一个事件(非)
-		evt := header.GetNextTimer()
+		evt := this.evt_recvMsg.GetNextTimer()
 		if evt.IsHeader() {
 			break
 		}
 
 		// 执行事件, 删除这个事件
-		evt.Exec()
+		evt.Exec(this.self)
 		this.PopTimer(evt)
 	}
 }
@@ -387,7 +387,7 @@ func (this *Thread) runExec(header event.IEvent) {
 		}
 
 		// 执行事件, 返回true, 删除这个事件, 返回false表示用户自己处理
-		if evt.Exec() {
+		if evt.Exec(this.self) {
 			this.RemoveEvent(evt)
 		} else if header.GetNextTimer() == evt {
 			// 防止使用者没有删除使用过的事件, 造成死循环, 该事件, 用户要么重新投递到其他链表, 要么删除

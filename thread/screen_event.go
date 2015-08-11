@@ -14,7 +14,7 @@ type Event_open_screen struct {
 }
 
 // 事件执行
-func (this *Event_open_screen) Exec() bool {
+func (this *Event_open_screen) Exec(home interface{}) bool {
 	if this.Open {
 		if this.Screen_thread_.Add_screen(this.Screen_name_, this.Screen_oid_) {
 			println("打开场景成功")

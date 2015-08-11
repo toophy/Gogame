@@ -10,7 +10,7 @@ type _task struct {
 	EventNormal
 }
 
-func (t *_task) Exec() bool {
+func (t *_task) Exec(home interface{}) bool {
 	fmt.Printf("Task %d Executed.\n", t.Id())
 	return true
 }
@@ -20,7 +20,7 @@ type _taskx struct {
 	name string
 }
 
-func (t *_taskx) Exec() bool {
+func (t *_taskx) Exec(home interface{}) bool {
 	fmt.Printf("Taskx(%s) %d Executed.\n", t.name, t.Id())
 	return true
 }

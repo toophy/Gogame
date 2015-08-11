@@ -11,7 +11,7 @@ type Event_close_thread struct {
 }
 
 // 事件执行
-func (this *Event_close_thread) Exec() bool {
+func (this *Event_close_thread) Exec(home interface{}) bool {
 	if this.Master != nil {
 		this.Master.pre_close_thread()
 		return true

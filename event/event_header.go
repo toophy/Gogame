@@ -15,7 +15,7 @@ func (this *EventHeader) IsHeader() bool {
 	return true
 }
 
-func (this *EventHeader) Exec() bool {
+func (this *EventHeader) Exec(home interface{}) bool {
 	println("Header Exec")
 	return true
 }
