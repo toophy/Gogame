@@ -69,3 +69,7 @@ func (this *EventHeader) SetDelayTime(d uint64, c uint64) {
 func (this *EventHeader) IsEmpty() bool {
 	return this.pre == this.next
 }
+
+func (this *EventHeader) PrintSelf() {
+	println("  {E} Is header")
+}

@@ -18,14 +18,16 @@ func (this *Event_heart_beat) Exec(home interface{}) bool {
 	this.Screen_.Tolua_heart_beat()
 
 	//
-	evt_hello := &Event_thread_hello{SrcThread: this.Screen_.Get_thread().Get_thread_id(), Chat: "wo 看看你", Replay: false}
 	if this.Screen_.Get_thread().Get_thread_id() == 1 {
-		evt_hello.DstThread = 2
-	} else if this.Screen_.Get_thread().Get_thread_id() == 2 {
-		evt_hello.DstThread = 1
+		evt_hello := &Event_thread_hello{SrcThread: this.Screen_.Get_thread().Get_thread_id(), Chat: "wo 看看你", Replay: false}
+		if this.Screen_.Get_thread().Get_thread_id() == 1 {
+			evt_hello.DstThread = 2
+		} else if this.Screen_.Get_thread().Get_thread_id() == 2 {
+			evt_hello.DstThread = 1
+		}
+		evt_hello.Init("", 100)
+		home.(jiekou.IScreenThread).PostThreadMsg(evt_hello.DstThread, evt_hello)
 	}
-	evt_hello.Init("", 3000)
-	home.(jiekou.IScreenThread).PostThreadMsg(evt_hello.DstThread, evt_hello)
 
 	//
 	evt := &Event_heart_beat{Screen_: this.Screen_}
@@ -48,14 +50,17 @@ type Event_thread_hello struct {
 // 事件执行
 func (this *Event_thread_hello) Exec(home interface{}) bool {
 
-	fmt.Printf("%d %s", this.SrcThread, this.Chat)
+	fmt.Printf("%d->%d %s\n\n", this.SrcThread, this.DstThread, this.Chat)
 
 	if !this.Replay {
-		println("need replay")
-		evt := &Event_thread_hello{SrcThread: this.DstThread, DstThread: this.SrcThread, Chat: "wo 也来看看你", Replay: true}
-		evt.Init("", 3000)
+		evt := &Event_thread_hello{SrcThread: this.DstThread, DstThread: this.SrcThread, Chat: "-- 回应", Replay: true}
+		evt.Init("", 100)
 		home.(jiekou.IScreenThread).PostThreadMsg(evt.DstThread, evt)
 	}
 
 	return true
+}
+
+func (this *Event_thread_hello) PrintSelf() {
+	fmt.Printf("   {E} %d->%d %s\n", this.SrcThread, this.DstThread, this.Chat)
 }

@@ -100,8 +100,8 @@ func (this *Thread) Init_thread(self IThread, id int32, name string, heart_time 
 
 	this.id = id
 	this.name = name
-	this.heart_time = heart_time
-	this.start_time = time.Now().UnixNano() / int64(time.Millisecond)
+	this.heart_time = heart_time * int64(time.Millisecond)
+	this.start_time = time.Now().UnixNano()
 	this.last_time = this.start_time
 	this.heart_rate = 1.0
 	this.self = self
@@ -140,16 +140,18 @@ func (this *Thread) Run_thread() {
 	go func() {
 		GetMaster().Add_run_thread(this.self)
 
-		this.start_time = time.Now().UnixNano() / int64(time.Millisecond)
+		this.start_time = time.Now().UnixNano()
 		this.last_time = this.start_time
-		next_time := time.Duration(this.heart_time * int64(time.Millisecond))
+		next_time := time.Duration(this.heart_time)
 		run_time := int64(0)
 
 		this.self.on_first_run()
 
 		for {
+
 			time.Sleep(next_time)
-			this.last_time = time.Now().UnixNano() / int64(time.Millisecond)
+
+			this.last_time = time.Now().UnixNano()
 			this.runThreadMsg()
 			this.runEvents()
 			this.runOnce()
@@ -158,14 +160,14 @@ func (this *Thread) Run_thread() {
 			this.sendThreadMsg()
 
 			// 计算下一次运行的时间
-			run_time = int64((time.Now().UnixNano() / int64(time.Millisecond)) - this.last_time)
+			run_time = time.Now().UnixNano() - this.last_time
 			if run_time >= this.heart_time {
-				run_time = this.heart_time - 10
+				run_time = this.heart_time - 10*1000*1000
 			} else if run_time < 0 {
 				run_time = 0
 			}
 
-			next_time = time.Duration((this.heart_time - run_time) * int64(time.Millisecond))
+			next_time = time.Duration(this.heart_time - run_time)
 
 			if this.pre_stop {
 				// 是否有需要释放的对象?
@@ -252,6 +254,7 @@ func (this *Thread) PostEvent(a event.IEvent) bool {
 // 投递线程间消息
 func (this *Thread) PostThreadMsg(tid int32, a event.IEvent) bool {
 	if tid == this.Get_thread_id() {
+		fmt.Printf("%d post msg failed\n", tid)
 		return false
 	}
 	if tid >= Tid_master && tid < Tid_last {
@@ -261,8 +264,10 @@ func (this *Thread) PostThreadMsg(tid int32, a event.IEvent) bool {
 		a.SetNextTimer(header)
 		a.SetPreTimer(old_pre)
 		old_pre.SetNextTimer(a)
+		a.PrintSelf()
 		return true
 	}
+	fmt.Printf("%d post msg failed2\n", tid)
 	return false
 }
 
@@ -326,14 +331,20 @@ func (this *Thread) PopObj(e event.IEvent) {
 // 接收并处理线程间消息
 func (this *Thread) runThreadMsg() {
 
-	G_thread_msg_pool.GetMsg(this.Get_thread_id(), &this.evt_recvMsg)
+	header := event.EventHeader{}
+	header.Init("", 100)
+
+	G_thread_msg_pool.GetMsg(this.Get_thread_id(), &header) // &this.evt_recvMsg)
 
 	for {
 		// 每次得到链表第一个事件(非)
-		evt := this.evt_recvMsg.GetNextTimer()
+		//evt := this.evt_recvMsg.GetNextTimer()
+		evt := header.GetNextTimer()
 		if evt.IsHeader() {
 			break
 		}
+
+		fmt.Printf("%d : have a msg\n", this.Get_thread_id())
 
 		// 执行事件, 删除这个事件
 		evt.Exec(this.self)
@@ -345,7 +356,7 @@ func (this *Thread) runThreadMsg() {
 func (this *Thread) sendThreadMsg() {
 	for i := int32(Tid_master); i < Tid_last; i++ {
 		if !this.evt_threadMsg[i].IsEmpty() {
-			println("sendThreadMsg")
+			fmt.Printf("%d : send a msg\n", this.Get_thread_id())
 			G_thread_msg_pool.PostMsg(i, this.evt_threadMsg[i])
 		}
 	}
@@ -353,7 +364,7 @@ func (this *Thread) sendThreadMsg() {
 
 // 运行一次定时器事件(一个线程心跳可以处理多次)
 func (this *Thread) runEvents() {
-	all_time := this.last_time - this.start_time
+	all_time := (this.last_time - this.start_time) / int64(time.Millisecond)
 
 	all_count := uint64((all_time + Evt_gap_time - 1) >> Evt_gap_bit)
 

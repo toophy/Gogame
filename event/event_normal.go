@@ -21,6 +21,8 @@ type IEvent interface {
 	GetTouchTime() uint64            // 获取定时器触发时间戳
 	SetTouchTime(t uint64)           // 设置定时器时间戳
 	SetDelayTime(d uint64, c uint64) // 设置定时器相对时间, c是当前时间戳
+	// 打印自己
+	PrintSelf() // 打印自己
 }
 
 // 普通事件
@@ -101,4 +103,8 @@ func (this *EventNormal) SetDelayTime(d uint64, c uint64) {
 
 func (this *EventNormal) IsEmpty() bool {
 	return true
+}
+
+func (this *EventNormal) PrintSelf() {
+	println("  {E} Is normal")
 }

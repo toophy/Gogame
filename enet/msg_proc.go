@@ -36,7 +36,7 @@ func (t *Msg_packet) Read_data(conn *net.TCPConn) error {
 	t.Len = 0
 	length, err := io.ReadFull(conn, t.Data[:2])
 	if length != MaxHeader {
-		fmt.Printf("Packet header : %d != %d", length, MaxHeader)
+		fmt.Printf("Packet header : %d != %d\n", length, MaxHeader)
 		return err
 	}
 	if err != nil {
@@ -58,7 +58,7 @@ func (t *Msg_packet) Read_body(conn *net.TCPConn) error {
 
 	length, err := io.ReadFull(conn, t.Data[2:t.Len])
 	if length != (t.Len - 2) {
-		fmt.Printf("Packet length : %d != %d ", length, t.Len-2)
+		fmt.Printf("Packet length : %d != %d \n", length, t.Len-2)
 		return err
 	}
 	if err != nil {
@@ -77,7 +77,7 @@ func (t *Msg_packet) Send(conn *net.TCPConn) error {
 
 		_, err := conn.Write(t.Data[:MaxHeader+t.Len])
 		if err != nil {
-			fmt.Printf(err.Error())
+			fmt.Printf(err.Error() + "\n")
 			return err
 		}
 	}

@@ -1,6 +1,7 @@
 package thread
 
 import (
+	"fmt"
 	"github.com/toophy/Gogame/event"
 	"sync"
 )
@@ -47,6 +48,8 @@ func (this *ThreadMsgPool) PostMsg(tid int32, a event.IEvent) bool {
 
 		header.SetPreTimer(a_next)
 		a_next.SetNextTimer(header)
+
+		fmt.Printf("    PostMsg -> %d\n", tid)
 
 		return true
 	}
