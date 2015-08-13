@@ -56,6 +56,17 @@ func regLua_screen_thread(struct_name string, L *lua.LState) error {
 				L.Push(lua.LBool(ret))
 				return 1
 			},
+
+			// 获取线程号
+			"Get_thread_id": func(L *lua.LState) int {
+				p := check(L)
+
+				ret := p.Get_thread_id()
+
+				L.Push(lua.LNumber(ret))
+
+				return 1
+			},
 		}))
 
 	return nil

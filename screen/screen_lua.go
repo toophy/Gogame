@@ -53,6 +53,15 @@ func regLua_screen(struct_name string, L *lua.LState) error {
 				L.Push(ret)
 				return 1
 			},
+
+			"Get_thread": func(L *lua.LState) int {
+				p := check(L)
+
+				ret := L.GetUserData("ScreenThread", p.Get_thread())
+
+				L.Push(ret)
+				return 1
+			},
 		}))
 
 	return nil

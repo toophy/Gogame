@@ -254,7 +254,7 @@ func (this *Thread) PostEvent(a event.IEvent) bool {
 // 投递线程间消息
 func (this *Thread) PostThreadMsg(tid int32, a event.IEvent) bool {
 	if tid == this.Get_thread_id() {
-		fmt.Printf("%d post msg failed\n", tid)
+		fmt.Printf("[W] %d post msg failed\n", tid)
 		return false
 	}
 	if tid >= Tid_master && tid < Tid_last {
@@ -264,10 +264,10 @@ func (this *Thread) PostThreadMsg(tid int32, a event.IEvent) bool {
 		a.SetNextTimer(header)
 		a.SetPreTimer(old_pre)
 		old_pre.SetNextTimer(a)
-		a.PrintSelf()
+
 		return true
 	}
-	fmt.Printf("%d post msg failed2\n", tid)
+	fmt.Printf("[W] %d post msg failed2\n", tid)
 	return false
 }
 
@@ -338,13 +338,10 @@ func (this *Thread) runThreadMsg() {
 
 	for {
 		// 每次得到链表第一个事件(非)
-		//evt := this.evt_recvMsg.GetNextTimer()
 		evt := header.GetNextTimer()
 		if evt.IsHeader() {
 			break
 		}
-
-		fmt.Printf("%d : have a msg\n", this.Get_thread_id())
 
 		// 执行事件, 删除这个事件
 		evt.Exec(this.self)
@@ -356,7 +353,7 @@ func (this *Thread) runThreadMsg() {
 func (this *Thread) sendThreadMsg() {
 	for i := int32(Tid_master); i < Tid_last; i++ {
 		if !this.evt_threadMsg[i].IsEmpty() {
-			fmt.Printf("%d : send a msg\n", this.Get_thread_id())
+
 			G_thread_msg_pool.PostMsg(i, this.evt_threadMsg[i])
 		}
 	}

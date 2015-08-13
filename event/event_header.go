@@ -67,9 +67,21 @@ func (this *EventHeader) SetDelayTime(d uint64, c uint64) {
 }
 
 func (this *EventHeader) IsEmpty() bool {
-	return this.pre == this.next
+	return this.pre == this && this.next == this
 }
 
 func (this *EventHeader) PrintSelf() {
 	println("  {E} Is header")
+}
+
+func (this *EventHeader) PrintList() {
+	tmp_header := this
+	tmp_next := tmp_header.GetNextTimer()
+	for {
+		if tmp_header == tmp_next {
+			break
+		}
+		tmp_next.PrintSelf()
+		tmp_next = tmp_next.GetNextTimer()
+	}
 }

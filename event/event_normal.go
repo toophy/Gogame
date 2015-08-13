@@ -23,6 +23,7 @@ type IEvent interface {
 	SetDelayTime(d uint64, c uint64) // 设置定时器相对时间, c是当前时间戳
 	// 打印自己
 	PrintSelf() // 打印自己
+	PrintList() // 打印列表(只对EventHeader有用)
 }
 
 // 普通事件
@@ -107,4 +108,7 @@ func (this *EventNormal) IsEmpty() bool {
 
 func (this *EventNormal) PrintSelf() {
 	println("  {E} Is normal")
+}
+
+func (this *EventNormal) PrintList() {
 }

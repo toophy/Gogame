@@ -7,7 +7,8 @@ function OnInit(s)
 end
 
 function OnHeartBeat( s)
-	-- print("  卧龙山庄心跳 "..os.time())
+	print(s:Get_thread():Get_thread_id().."  卧龙山庄心跳 "..os.time())
+	
 	-- print(s:Get_data()["lolo"])
 	-- s:Get_data()["lolo"] = "lolo"..os.time()
 end
