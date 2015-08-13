@@ -48,7 +48,7 @@ type Event_thread_hello struct {
 // 事件执行
 func (this *Event_thread_hello) Exec(home interface{}) bool {
 
-	fmt.Printf("%d->%d %s\n\n", this.SrcThread, this.DstThread, this.Chat)
+	home.(jiekou.IScreenThread).LogWarn("%d->%d %s", this.SrcThread, this.DstThread, this.Chat)
 
 	if !this.Replay {
 		evt := &Event_thread_hello{SrcThread: this.DstThread, DstThread: this.SrcThread, Chat: "-- 回应", Replay: true}

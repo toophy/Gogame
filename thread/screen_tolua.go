@@ -1,7 +1,6 @@
 package thread
 
 import (
-	"fmt"
 	lua "github.com/toophy/gopher-lua"
 )
 
@@ -21,7 +20,7 @@ func (this *ScreenThread) Tolua_OnInitScreen() (ret int) {
 	defer func() {
 		if r := recover(); r != nil {
 			ret = -1
-			fmt.Println(r.(error).Error())
+			this.LogFatal("Tolua_OnInitScreen : " + r.(error).Error())
 		}
 	}()
 
@@ -31,7 +30,6 @@ func (this *ScreenThread) Tolua_OnInitScreen() (ret int) {
 		NRet:    1,                                                 // 返回值的数量
 		Protect: true,                                              // 保护?
 	}, this.GetLUserData("ScreenThread", this)); err != nil {
-		println("panic c")
 		panic(err)
 	}
 

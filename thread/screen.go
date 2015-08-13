@@ -2,6 +2,7 @@ package thread
 
 import (
 	"errors"
+	"github.com/toophy/Gogame/jiekou"
 	"github.com/toophy/Gogame/screen"
 	lua "github.com/toophy/gopher-lua"
 )
@@ -30,7 +31,7 @@ func New_screen_thread(id int32, name string, heart_time int64, lay1_time uint64
 
 // 初始化场景线程
 func (this *ScreenThread) Init_screen_thread(id int32, name string, heart_time int64, lay1_time uint64) error {
-	if id < Tid_screen_1 || id > Tid_screen_9 {
+	if id < jiekou.Tid_screen_1 || id > jiekou.Tid_screen_9 {
 		return errors.New("[E] 线程ID超出范围 [Tid_screen_1,Tid_screen_9]")
 	}
 	err := this.Init_thread(this, id, name, heart_time, lay1_time)
@@ -68,7 +69,7 @@ func (this *ScreenThread) on_first_run() {
 
 	errInit := this.reloadLuaState()
 	if errInit != nil {
-		println(errInit.Error())
+		this.LogError(errInit.Error())
 		return
 	}
 

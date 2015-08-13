@@ -1,9 +1,8 @@
 package thread
 
 import (
-	//"fmt"
 	"errors"
-
+	"github.com/toophy/Gogame/jiekou"
 	lua "github.com/toophy/gopher-lua"
 	"sync"
 	"time"
@@ -24,7 +23,7 @@ var myMaster *Master = nil
 func GetMaster() *Master {
 	if myMaster == nil {
 		myMaster = &Master{}
-		err := myMaster.Init_master_thread(myMaster, "主线程", 100, Evt_lay1_time)
+		err := myMaster.Init_master_thread(myMaster, "主线程", 100, jiekou.Evt_lay1_time)
 		if err != nil {
 			panic(err.Error())
 		}
@@ -35,7 +34,7 @@ func GetMaster() *Master {
 
 // 初始化主线程
 func (this *Master) Init_master_thread(self IThread, name string, heart_time int64, lay1_time uint64) error {
-	err := this.Init_thread(self, Tid_master, name, heart_time, lay1_time)
+	err := this.Init_thread(self, jiekou.Tid_master, name, heart_time, lay1_time)
 	if err == nil {
 		this.threadCount = 0
 		this.threadIds = make(map[int32]IThread, 0)
@@ -97,25 +96,36 @@ func (this *Master) on_first_run() {
 		panic(errInit.Error())
 	}
 
-	sc1, err := New_screen_thread(Tid_screen_1, "场景线程1", 100, Evt_lay1_time)
+	log1, err := New_log_thread(300, 10000)
+	if err == nil && log1 != nil {
+		log1.Run_thread()
+	} else {
+		if err != nil {
+			println("[E] 新建日志线程失败:" + err.Error())
+		} else {
+			println("[E] 新建日志线程失败:")
+		}
+	}
+
+	sc1, err := New_screen_thread(jiekou.Tid_screen_1, "场景线程1", 100, jiekou.Evt_lay1_time)
 	if err == nil && sc1 != nil {
 		sc1.Run_thread()
 	} else {
 		if err != nil {
-			println("[E] 新建场景线程1失败:" + err.Error())
+			this.LogError("新建场景线程1失败:" + err.Error())
 		} else {
-			println("[E] 新建场景线程1失败:")
+			this.LogError("新建场景线程1失败:")
 		}
 	}
 
-	sc2, err := New_screen_thread(Tid_screen_2, "场景线程2", 100, Evt_lay1_time)
+	sc2, err := New_screen_thread(jiekou.Tid_screen_2, "场景线程2", 100, jiekou.Evt_lay1_time)
 	if err == nil && sc2 != nil {
 		sc2.Run_thread()
 	} else {
 		if err != nil {
-			println("[E] 新建场景线程2失败:" + err.Error())
+			this.LogError("新建场景线程2失败:" + err.Error())
 		} else {
-			println("[E] 新建场景线程2失败:")
+			this.LogError("新建场景线程2失败:")
 		}
 	}
 }

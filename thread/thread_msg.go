@@ -1,8 +1,8 @@
 package thread
 
 import (
-	// "fmt"
 	"github.com/toophy/Gogame/event"
+	"github.com/toophy/Gogame/jiekou"
 	"sync"
 )
 
@@ -14,13 +14,13 @@ func init() {
 
 // 线程间消息存放处
 type ThreadMsgPool struct {
-	lock   [Tid_last]sync.RWMutex // 每个线程的消息池有一个独立的读写锁
-	header [Tid_last]event.IEvent // 每个线程的消息池
+	lock   [jiekou.Tid_last]sync.RWMutex // 每个线程的消息池有一个独立的读写锁
+	header [jiekou.Tid_last]event.IEvent // 每个线程的消息池
 }
 
 // 初始化
 func (this *ThreadMsgPool) Init() {
-	for i := 0; i < Tid_last; i++ {
+	for i := 0; i < jiekou.Tid_last; i++ {
 		this.header[i] = new(event.EventHeader)
 		this.header[i].Init("", 100)
 	}
@@ -31,7 +31,7 @@ func (this *ThreadMsgPool) PostMsg(tid int32, a event.IEvent) bool {
 	if !a.IsHeader() || a.IsEmpty() {
 		return false
 	}
-	if tid >= Tid_master && tid < Tid_last {
+	if tid >= jiekou.Tid_master && tid < jiekou.Tid_last {
 		this.lock[tid].Lock()
 		defer this.lock[tid].Unlock()
 
@@ -59,7 +59,7 @@ func (this *ThreadMsgPool) GetMsg(tid int32, a event.IEvent) bool {
 	if !a.IsHeader() {
 		return false
 	}
-	if tid >= Tid_master && tid < Tid_last {
+	if tid >= jiekou.Tid_master && tid < jiekou.Tid_last {
 		this.lock[tid].Lock()
 		defer this.lock[tid].Unlock()
 

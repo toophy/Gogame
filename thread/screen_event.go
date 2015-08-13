@@ -17,17 +17,17 @@ type Event_open_screen struct {
 func (this *Event_open_screen) Exec(home interface{}) bool {
 	if this.Open {
 		if this.Screen_thread_.Add_screen(this.Screen_name_, this.Screen_oid_) {
-			println("打开场景成功")
+			this.Screen_thread_.LogError("打开场景成功")
 			return true
 		}
-		println("打开场景失败")
+		this.Screen_thread_.LogError("打开场景失败")
 		return true
 	}
 
 	if this.Screen_thread_.Del_screen(this.Screen_oid_) {
-		println("关闭场景成功")
+		this.Screen_thread_.LogError("关闭场景成功")
 		return true
 	}
-	println("关闭场景失败")
+	this.Screen_thread_.LogError("关闭场景失败")
 	return true
 }

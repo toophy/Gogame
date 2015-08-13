@@ -1,41 +1,13 @@
 package thread
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
 	"github.com/toophy/Gogame/event"
+	"github.com/toophy/Gogame/jiekou"
+	"strings"
 	"time"
-)
-
-const (
-	Tid_master = iota
-	Tid_screen_1
-	Tid_screen_2
-	Tid_screen_3
-	Tid_screen_4
-	Tid_screen_5
-	Tid_screen_6
-	Tid_screen_7
-	Tid_screen_8
-	Tid_screen_9
-	Tid_net_1
-	Tid_net_2
-	Tid_net_3
-	Tid_db_1
-	Tid_db_2
-	Tid_db_3
-	Tid_last
-)
-
-const (
-	Evt_gap_time  = 16     // 心跳时间(毫秒)
-	Evt_gap_bit   = 4      // 心跳时间对应得移位(快速运算使用)
-	Evt_lay1_time = 160000 // 第一层事件池最大支持时间(毫秒)
-)
-
-var (
-	PoolSizePerTick = 10
-	ErrTaskNotFound = errors.New("The task was not found.")
 )
 
 // 线程接口
@@ -53,44 +25,48 @@ type IThread interface {
 	RemoveEvent(e event.IEvent) bool                         // 删除事件, 只能操作本线程事件
 	PopTimer(e event.IEvent)                                 // 从线程事件中弹出指定事件, 只能操作本线程事件
 	PopObj(e event.IEvent)                                   // 从关联对象中弹出指定事件, 只能操作本线程事件
+	LogDebug(f string, v ...interface{})                     // 线程日志 : 调试[D]级别日志
+	LogInfo(f string, v ...interface{})                      // 线程日志 : 信息[I]级别日志
+	LogWarn(f string, v ...interface{})                      // 线程日志 : 警告[W]级别日志
+	LogError(f string, v ...interface{})                     // 线程日志 : 错误[E]级别日志
+	LogFatal(f string, v ...interface{})                     // 线程日志 : 致命[F]级别日志
 }
 
 // 线程基本功能
-// procs      msg_list               // 待处理消息链表
-// sends      [Tid_last]bind_fn_list // 发送消息链表组
-// recvs      msg_list               // 接收消息链表
 type Thread struct {
-	id               int32                   // Id号
-	name             string                  // 线程名称
-	heart_time       int64                   // 心跳时间(毫秒)
-	start_time       int64                   // 线程开启时间戳
-	last_time        int64                   // 最近一次线程运行时间戳
-	heart_rate       float64                 // 本次心跳比率
-	pre_stop         bool                    // 预备停止
-	self             IThread                 // 自己, 初始化之后, 不要操作
-	first_run        bool                    // 线程首次运行
-	evt_lay1         []event.IEvent          // 第一层事件池
-	evt_lay2         map[uint64]event.IEvent // 第二层事件池
-	evt_names        map[string]event.IEvent // 别名
-	evt_lay1Size     uint64                  // 第一层池容量
-	evt_lay1Cursor   uint64                  // 第一层游标
-	evt_lastRunCount uint64                  // 最近一次运行次数
-	evt_currRunCount uint64                  // 当前运行次数
-	evt_threadMsg    [Tid_last]event.IEvent  // 保存将要发给其他线程的事件(消息)
-	evt_recvMsg      event.EventHeader       // 接收线程间消息
+	id               int32                         // Id号
+	name             string                        // 线程名称
+	heart_time       int64                         // 心跳时间(毫秒)
+	start_time       int64                         // 线程开启时间戳
+	last_time        int64                         // 最近一次线程运行时间戳
+	heart_rate       float64                       // 本次心跳比率
+	pre_stop         bool                          // 预备停止
+	self             IThread                       // 自己, 初始化之后, 不要操作
+	first_run        bool                          // 线程首次运行
+	evt_lay1         []event.IEvent                // 第一层事件池
+	evt_lay2         map[uint64]event.IEvent       // 第二层事件池
+	evt_names        map[string]event.IEvent       // 别名
+	evt_lay1Size     uint64                        // 第一层池容量
+	evt_lay1Cursor   uint64                        // 第一层游标
+	evt_lastRunCount uint64                        // 最近一次运行次数
+	evt_currRunCount uint64                        // 当前运行次数
+	evt_threadMsg    [jiekou.Tid_last]event.IEvent // 保存将要发给其他线程的事件(消息)
+	evt_recvMsg      event.EventHeader             // 接收线程间消息
+	log_Buffer       bytes.Buffer                  // 线程日志缓冲
+	log_TimeString   string                        // 时间格式(精确到秒2015.08.13 16:33:00)
 }
 
 // 初始化线程(必须调用)
 // usage : Init_thread(Tid_master, "主线程", 100)
 func (this *Thread) Init_thread(self IThread, id int32, name string, heart_time int64, lay1_time uint64) error {
-	if id < Tid_master || id >= Tid_last {
+	if id < jiekou.Tid_master || id >= jiekou.Tid_last {
 		return errors.New("[E] 线程ID超出范围 [Tid_master,Tid_last]")
 	}
 	if self == nil {
 		return errors.New("[E] 线程自身指针不能为nil")
 	}
 
-	if lay1_time < Evt_gap_time || lay1_time > Evt_lay1_time {
+	if lay1_time < jiekou.Evt_gap_time || lay1_time > jiekou.Evt_lay1_time {
 		return errors.New("[E] 第一层支持16毫秒到160000毫秒")
 	}
 
@@ -108,7 +84,7 @@ func (this *Thread) Init_thread(self IThread, id int32, name string, heart_time 
 	this.first_run = true
 
 	// 初始化事件池
-	this.evt_lay1Size = lay1_time >> Evt_gap_bit
+	this.evt_lay1Size = lay1_time >> jiekou.Evt_gap_bit
 	this.evt_lay1Cursor = 0
 	this.evt_currRunCount = 1
 	this.evt_lastRunCount = this.evt_currRunCount
@@ -122,12 +98,14 @@ func (this *Thread) Init_thread(self IThread, id int32, name string, heart_time 
 		this.evt_lay1[i].Init("", 100)
 	}
 
-	for i := 0; i < Tid_last; i++ {
+	for i := 0; i < jiekou.Tid_last; i++ {
 		this.evt_threadMsg[i] = new(event.EventHeader)
 		this.evt_threadMsg[i].Init("", 100)
 	}
 
 	this.evt_recvMsg.Init("", 100)
+
+	this.log_TimeString = time.Now().Format("2006-01-02 15:04:05")
 
 	return nil
 }
@@ -150,6 +128,8 @@ func (this *Thread) Run_thread() {
 		for {
 
 			time.Sleep(next_time)
+
+			this.log_TimeString = time.Now().Format("01-02 15:04:05")
 
 			this.last_time = time.Now().UnixNano()
 			this.runThreadMsg()
@@ -216,7 +196,7 @@ func (this *Thread) PostEvent(a event.IEvent) bool {
 	}
 
 	// 计算放在那一层
-	pos := (a.GetTouchTime() + Evt_gap_time - 1) >> Evt_gap_bit
+	pos := (a.GetTouchTime() + jiekou.Evt_gap_time - 1) >> jiekou.Evt_gap_bit
 	if pos < 0 {
 		pos = 1
 	}
@@ -257,7 +237,7 @@ func (this *Thread) PostThreadMsg(tid int32, a event.IEvent) bool {
 		fmt.Printf("[W] %d post msg failed\n", tid)
 		return false
 	}
-	if tid >= Tid_master && tid < Tid_last {
+	if tid >= jiekou.Tid_master && tid < jiekou.Tid_last {
 		header := this.evt_threadMsg[tid]
 		old_pre := header.GetPreTimer()
 		header.SetPreTimer(a)
@@ -351,7 +331,18 @@ func (this *Thread) runThreadMsg() {
 
 // 发送消息间消息
 func (this *Thread) sendThreadMsg() {
-	for i := int32(Tid_master); i < Tid_last; i++ {
+
+	// 发送日志到日志线程
+	if this.log_Buffer.Len() > 0 {
+		evt := &Event_thread_log{}
+		evt.Init("", 100)
+		evt.Data = this.log_Buffer
+		fmt.Print(this.log_Buffer.String())
+		this.PostThreadMsg(jiekou.Tid_log, evt)
+		this.log_Buffer.Reset()
+	}
+
+	for i := int32(jiekou.Tid_master); i < jiekou.Tid_last; i++ {
 		if !this.evt_threadMsg[i].IsEmpty() {
 
 			G_thread_msg_pool.PostMsg(i, this.evt_threadMsg[i])
@@ -363,7 +354,7 @@ func (this *Thread) sendThreadMsg() {
 func (this *Thread) runEvents() {
 	all_time := (this.last_time - this.start_time) / int64(time.Millisecond)
 
-	all_count := uint64((all_time + Evt_gap_time - 1) >> Evt_gap_bit)
+	all_count := uint64((all_time + jiekou.Evt_gap_time - 1) >> jiekou.Evt_gap_bit)
 
 	for i := this.evt_lastRunCount; i <= all_count; i++ {
 		// 执行第一层事件
@@ -413,9 +404,54 @@ func (this *Thread) PrintAll() {
 		第一层池容量:%d
 		第一层游标:%d
 		运行次数%d
-		`, Evt_gap_time, Evt_gap_bit, this.evt_lay1Size, this.evt_lay1Cursor, this.evt_currRunCount)
+		`, jiekou.Evt_gap_time, jiekou.Evt_gap_bit, this.evt_lay1Size, this.evt_lay1Cursor, this.evt_currRunCount)
 
 	for k, v := range this.evt_names {
 		fmt.Println(k, v)
 	}
+}
+
+// // Debug logs a message at debug level.
+// func Debug(v ...interface{}) {
+// 	BeeLogger.Debug(generateFmtStr(len(v)), v...)
+// }
+
+// // Trace logs a message at trace level.
+// // compatibility alias for Warning()
+// func Trace(v ...interface{}) {
+// 	BeeLogger.Trace(generateFmtStr(len(v)), v...)
+// }
+
+func generateFmtStr(n int) string {
+	return strings.Repeat("%v ", n)
+}
+
+// 线程日志 : 调试[D]级别日志
+func (this *Thread) LogDebug(f string, v ...interface{}) {
+	info := this.log_TimeString + " [D] " + fmt.Sprintf(f, v...) + "\n"
+	this.log_Buffer.WriteString(info)
+}
+
+// 线程日志 : 信息[I]级别日志
+func (this *Thread) LogInfo(f string, v ...interface{}) {
+	info := this.log_TimeString + " [I] " + fmt.Sprintf(f, v...) + "\n"
+	this.log_Buffer.WriteString(info)
+}
+
+// 线程日志 : 警告[W]级别日志
+func (this *Thread) LogWarn(f string, v ...interface{}) {
+	info := this.log_TimeString + " [W] " + fmt.Sprintf(f, v...) + "\n"
+	this.log_Buffer.WriteString(info)
+}
+
+// 线程日志 : 错误[E]级别日志
+func (this *Thread) LogError(f string, v ...interface{}) {
+	info := this.log_TimeString + " [E] " + fmt.Sprintf(f, v...) + "\n"
+	this.log_Buffer.WriteString(info)
+}
+
+// 线程日志 : 致命[F]级别日志
+func (this *Thread) LogFatal(f string, v ...interface{}) {
+	info := this.log_TimeString + " [F] " + fmt.Sprintf(f, v...) + "\n"
+	this.log_Buffer.WriteString(info)
 }
