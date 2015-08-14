@@ -12,6 +12,9 @@ Gogame 是一款 MMORPG 游戏服务器框架.
 
 ## 文档
 
+## 规划
+[未来规划](https://github.com/toophy/Gogame/blob/master/plan.md)
+
 
 ## 授权
 
