@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/toophy/Gogame/event"
+	"github.com/toophy/Gogame/help"
 	"github.com/toophy/Gogame/jiekou"
 	"strings"
 	"time"
@@ -34,26 +35,26 @@ type IThread interface {
 
 // 线程基本功能
 type Thread struct {
-	id               int32                         // Id号
-	name             string                        // 线程名称
-	heart_time       int64                         // 心跳时间(毫秒)
-	start_time       int64                         // 线程开启时间戳
-	last_time        int64                         // 最近一次线程运行时间戳
-	heart_rate       float64                       // 本次心跳比率
-	pre_stop         bool                          // 预备停止
-	self             IThread                       // 自己, 初始化之后, 不要操作
-	first_run        bool                          // 线程首次运行
-	evt_lay1         []event.IEvent                // 第一层事件池
-	evt_lay2         map[uint64]event.IEvent       // 第二层事件池
-	evt_names        map[string]event.IEvent       // 别名
-	evt_lay1Size     uint64                        // 第一层池容量
-	evt_lay1Cursor   uint64                        // 第一层游标
-	evt_lastRunCount uint64                        // 最近一次运行次数
-	evt_currRunCount uint64                        // 当前运行次数
-	evt_threadMsg    [jiekou.Tid_last]event.IEvent // 保存将要发给其他线程的事件(消息)
-	evt_recvMsg      event.EventHeader             // 接收线程间消息
-	log_Buffer       bytes.Buffer                  // 线程日志缓冲
-	log_TimeString   string                        // 时间格式(精确到秒2015.08.13 16:33:00)
+	id               int32                           // Id号
+	name             string                          // 线程名称
+	heart_time       int64                           // 心跳时间(毫秒)
+	start_time       int64                           // 线程开启时间戳
+	last_time        int64                           // 最近一次线程运行时间戳
+	heart_rate       float64                         // 本次心跳比率
+	pre_stop         bool                            // 预备停止
+	self             IThread                         // 自己, 初始化之后, 不要操作
+	first_run        bool                            // 线程首次运行
+	evt_lay1         []*help.ListNode                // 第一层事件池
+	evt_lay2         map[uint64]*help.ListNode       // 第二层事件池
+	evt_names        map[string]*help.ListNode       // 别名
+	evt_lay1Size     uint64                          // 第一层池容量
+	evt_lay1Cursor   uint64                          // 第一层游标
+	evt_lastRunCount uint64                          // 最近一次运行次数
+	evt_currRunCount uint64                          // 当前运行次数
+	evt_threadMsg    [jiekou.Tid_last]*help.ListNode // 保存将要发给其他线程的事件(消息)
+	evt_recvMsg      event.EventHeader               // 接收线程间消息
+	log_Buffer       bytes.Buffer                    // 线程日志缓冲
+	log_TimeString   string                          // 时间格式(精确到秒2015.08.13 16:33:00)
 }
 
 // 初始化线程(必须调用)
@@ -89,17 +90,17 @@ func (this *Thread) Init_thread(self IThread, id int32, name string, heart_time 
 	this.evt_currRunCount = 1
 	this.evt_lastRunCount = this.evt_currRunCount
 
-	this.evt_lay1 = make([]event.IEvent, this.evt_lay1Size)
-	this.evt_lay2 = make(map[uint64]event.IEvent, 0)
-	this.evt_names = make(map[string]event.IEvent, 0)
+	this.evt_lay1 = make([]*help.ListNode, this.evt_lay1Size)
+	this.evt_lay2 = make(map[uint64]*help.ListNode, 0)
+	this.evt_names = make(map[string]*help.ListNode, 0)
 
 	for i := uint64(0); i < this.evt_lay1Size; i++ {
-		this.evt_lay1[i] = new(event.EventHeader)
+		this.evt_lay1[i] = new(help.ListNode)
 		this.evt_lay1[i].Init("", 100)
 	}
 
 	for i := 0; i < jiekou.Tid_last; i++ {
-		this.evt_threadMsg[i] = new(event.EventHeader)
+		this.evt_threadMsg[i] = new(help.ListNode)
 		this.evt_threadMsg[i].Init("", 100)
 	}
 
@@ -311,20 +312,20 @@ func (this *Thread) PopObj(e event.IEvent) {
 // 接收并处理线程间消息
 func (this *Thread) runThreadMsg() {
 
-	header := event.EventHeader{}
+	header := help.ListNode{}
 	header.Init("", 100)
 
 	G_thread_msg_pool.GetMsg(this.Get_thread_id(), &header) // &this.evt_recvMsg)
 
 	for {
 		// 每次得到链表第一个事件(非)
-		evt := header.GetNextTimer()
-		if evt.IsHeader() {
+		evt := header.Next
+		if evt == header {
 			break
 		}
 
 		// 执行事件, 删除这个事件
-		evt.Exec(this.self)
+		evt.Data.(*event.IEvent).Exec(this.self)
 		this.PopTimer(evt)
 	}
 }
@@ -377,18 +378,18 @@ func (this *Thread) runEvents() {
 }
 
 // 运行一条定时器事件链表, 每次都执行第一个事件, 直到链表为空
-func (this *Thread) runExec(header event.IEvent) {
+func (this *Thread) runExec(header *help.ListNode) {
 	for {
 		// 每次得到链表第一个事件(非)
-		evt := header.GetNextTimer()
-		if evt.IsHeader() {
+		evt := header.Next
+		if evt == header {
 			break
 		}
 
 		// 执行事件, 返回true, 删除这个事件, 返回false表示用户自己处理
-		if evt.Exec(this.self) {
+		if evt.Data.(*IEvent).Exec(this.self) {
 			this.RemoveEvent(evt)
-		} else if header.GetNextTimer() == evt {
+		} else if header.Next == evt {
 			// 防止使用者没有删除使用过的事件, 造成死循环, 该事件, 用户要么重新投递到其他链表, 要么删除
 			this.RemoveEvent(evt)
 		}
