@@ -2,6 +2,7 @@ package jiekou
 
 import (
 	"github.com/toophy/Gogame/event"
+	"github.com/toophy/Gogame/help"
 	lua "github.com/toophy/gopher-lua"
 )
 
@@ -39,11 +40,11 @@ type IScreenThread interface {
 	GetLuaState() *lua.LState                     // !!!只能获取, 不准许保存指针, 获取LState
 	PostEvent(a event.IEvent) bool                // 投递定时器事件
 	PostThreadMsg(tid int32, a event.IEvent) bool // 投递线程间消息
-	GetEvent(name string) event.IEvent            // 通过别名获取事件
+	GetEvent(name string) *help.ListNode          // 通过别名获取事件
 	RemoveEvent(e event.IEvent) bool              // 删除事件, 只能操作本线程事件
-	RemoveEventList(header event.IEvent)          // 删除一整个事件列表
-	PopTimer(e event.IEvent)                      // 从线程事件中弹出指定事件, 只能操作本线程事件
-	PopObj(e event.IEvent)                        // 从关联对象中弹出指定事件, 只能操作本线程事件
+	RemoveEventList(header *help.ListNode)        // 删除一整个事件列表
+	PopTimer(e *help.ListNode)                    // 从线程事件中弹出指定事件, 只能操作本线程事件
+	PopObj(e *help.ListNode)                      // 从关联对象中弹出指定事件, 只能操作本线程事件
 	LogDebug(f string, v ...interface{})          // 线程日志 : 调试[D]级别日志
 	LogInfo(f string, v ...interface{})           // 线程日志 : 信息[I]级别日志
 	LogWarn(f string, v ...interface{})           // 线程日志 : 警告[W]级别日志

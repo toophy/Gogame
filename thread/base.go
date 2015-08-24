@@ -22,10 +22,10 @@ type IThread interface {
 	on_run()                                                 // -- 只允许thread调用 : 线程运行部分
 	on_end()                                                 // -- 只允许thread调用 : 线程结束回调
 	PostEvent(a event.IEvent) bool                           // 投递定时器事件
-	GetEvent(name string) event.IEvent                       // 通过别名获取事件
+	GetEvent(name string) *help.ListNode                     // 通过别名获取事件
 	RemoveEvent(e event.IEvent) bool                         // 删除事件, 只能操作本线程事件
-	PopTimer(e event.IEvent)                                 // 从线程事件中弹出指定事件, 只能操作本线程事件
-	PopObj(e event.IEvent)                                   // 从关联对象中弹出指定事件, 只能操作本线程事件
+	PopTimer(e *help.ListNode)                               // 从线程事件中弹出指定事件, 只能操作本线程事件
+	PopObj(e *help.ListNode)                                 // 从关联对象中弹出指定事件, 只能操作本线程事件
 	LogDebug(f string, v ...interface{})                     // 线程日志 : 调试[D]级别日志
 	LogInfo(f string, v ...interface{})                      // 线程日志 : 信息[I]级别日志
 	LogWarn(f string, v ...interface{})                      // 线程日志 : 警告[W]级别日志
@@ -52,7 +52,6 @@ type Thread struct {
 	evt_lastRunCount uint64                          // 最近一次运行次数
 	evt_currRunCount uint64                          // 当前运行次数
 	evt_threadMsg    [jiekou.Tid_last]*help.ListNode // 保存将要发给其他线程的事件(消息)
-	evt_recvMsg      event.EventHeader               // 接收线程间消息
 	log_Buffer       bytes.Buffer                    // 线程日志缓冲
 	log_TimeString   string                          // 时间格式(精确到秒2015.08.13 16:33:00)
 }
@@ -96,15 +95,13 @@ func (this *Thread) Init_thread(self IThread, id int32, name string, heart_time 
 
 	for i := uint64(0); i < this.evt_lay1Size; i++ {
 		this.evt_lay1[i] = new(help.ListNode)
-		this.evt_lay1[i].Init("", 100)
+		this.evt_lay1[i].Init()
 	}
 
 	for i := 0; i < jiekou.Tid_last; i++ {
 		this.evt_threadMsg[i] = new(help.ListNode)
-		this.evt_threadMsg[i].Init("", 100)
+		this.evt_threadMsg[i].Init()
 	}
-
-	this.evt_recvMsg.Init("", 100)
 
 	this.log_TimeString = time.Now().Format("2006-01-02 15:04:05")
 
@@ -202,7 +199,7 @@ func (this *Thread) PostEvent(a event.IEvent) bool {
 		pos = 1
 	}
 
-	var header event.IEvent
+	var header *help.ListNode
 
 	if pos < this.evt_lay1Size {
 		new_pos := this.evt_lay1Cursor + pos
@@ -213,20 +210,20 @@ func (this *Thread) PostEvent(a event.IEvent) bool {
 		header = this.evt_lay1[pos]
 	} else {
 		if _, ok := this.evt_lay2[pos]; !ok {
-			this.evt_lay2[pos] = new(event.EventHeader)
-			this.evt_lay2[pos].Init("", 100)
+			this.evt_lay2[pos] = new(help.ListNode)
+			this.evt_lay2[pos].Init()
 		}
 		header = this.evt_lay2[pos]
 	}
 
-	old_pre := header.GetPreTimer()
-	header.SetPreTimer(a)
-	a.SetNextTimer(header)
-	a.SetPreTimer(old_pre)
-	old_pre.SetNextTimer(a)
+	old_pre := header.Pre
+	header.Pre = a.GetNodeTimer()
+	a.GetNodeTimer().Next = header
+	a.GetNodeTimer().Pre = old_pre
+	old_pre.Next = a.GetNodeTimer()
 
 	if check_name {
-		this.evt_names[a.GetName()] = a
+		this.evt_names[a.GetName()] = a.GetNodeTimer()
 	}
 
 	return true
@@ -240,11 +237,12 @@ func (this *Thread) PostThreadMsg(tid int32, a event.IEvent) bool {
 	}
 	if tid >= jiekou.Tid_master && tid < jiekou.Tid_last {
 		header := this.evt_threadMsg[tid]
-		old_pre := header.GetPreTimer()
-		header.SetPreTimer(a)
-		a.SetNextTimer(header)
-		a.SetPreTimer(old_pre)
-		old_pre.SetNextTimer(a)
+
+		old_pre := header.Pre
+		header.Pre = a.GetNodeTimer()
+		a.GetNodeTimer().Next = header
+		a.GetNodeTimer().Pre = old_pre
+		old_pre.Next = a.GetNodeTimer()
 
 		return true
 	}
@@ -253,7 +251,7 @@ func (this *Thread) PostThreadMsg(tid int32, a event.IEvent) bool {
 }
 
 // 通过别名获取事件
-func (this *Thread) GetEvent(name string) event.IEvent {
+func (this *Thread) GetEvent(name string) *help.ListNode {
 	if _, ok := this.evt_names[name]; ok {
 		return this.evt_names[name]
 	}
@@ -262,70 +260,61 @@ func (this *Thread) GetEvent(name string) event.IEvent {
 
 // 删除事件, 只能操作本线程事件
 func (this *Thread) RemoveEvent(e event.IEvent) bool {
-	if !e.IsHeader() {
-		if len(e.GetName()) > 0 {
-			delete(this.evt_names, e.GetName())
-		}
-
-		this.PopTimer(e)
-		this.PopObj(e)
-
-		return true
+	if len(e.GetName()) > 0 {
+		delete(this.evt_names, e.GetName())
 	}
-	return false
+
+	this.PopTimer(e.GetNodeTimer())
+	this.PopObj(e.GetNodeObj())
+
+	return true
 }
 
 // 删除事件, 只能操作本线程事件
-func (this *Thread) RemoveEventList(header event.IEvent) {
-	if header.IsHeader() {
+func (this *Thread) RemoveEventList(header *help.ListNode) {
+	if header != nil {
 		for {
 			// 每次得到链表第一个事件(非)
-			e := header.GetNextObj()
-			if e.IsHeader() {
+			e := header.Next
+			if e == header {
 				break
 			}
-			this.RemoveEvent(e)
+			this.RemoveEvent(e.Data.(event.IEvent))
 		}
 	}
 }
 
 // 从线程事件中弹出指定事件, 只能操作本线程事件
-func (this *Thread) PopTimer(e event.IEvent) {
-	if !e.IsHeader() {
-		e.GetPreTimer().SetNextTimer(e.GetNextTimer())
-		e.GetNextTimer().SetPreTimer(e.GetPreTimer())
-		e.SetNextTimer(nil)
-		e.SetPreTimer(nil)
-	}
+func (this *Thread) PopTimer(e *help.ListNode) {
+	e.Pre.Next = e.Next
+	e.Next.Pre = e.Pre
+	e.Init()
 }
 
 // 从关联对象中弹出指定事件, 只能操作本线程事件
-func (this *Thread) PopObj(e event.IEvent) {
-	if !e.IsHeader() {
-		e.GetPreObj().SetNextObj(e.GetNextObj())
-		e.GetNextObj().SetPreObj(e.GetPreObj())
-		e.SetNextObj(nil)
-		e.SetPreObj(nil)
-	}
+func (this *Thread) PopObj(e *help.ListNode) {
+	e.Pre.Next = e.Next
+	e.Next.Pre = e.Pre
+	e.Init()
 }
 
 // 接收并处理线程间消息
 func (this *Thread) runThreadMsg() {
 
 	header := help.ListNode{}
-	header.Init("", 100)
+	header.Init()
 
 	G_thread_msg_pool.GetMsg(this.Get_thread_id(), &header) // &this.evt_recvMsg)
 
 	for {
 		// 每次得到链表第一个事件(非)
 		evt := header.Next
-		if evt == header {
+		if evt == &header {
 			break
 		}
 
 		// 执行事件, 删除这个事件
-		evt.Data.(*event.IEvent).Exec(this.self)
+		evt.Data.(event.IEvent).Exec(this.self)
 		this.PopTimer(evt)
 	}
 }
@@ -387,11 +376,11 @@ func (this *Thread) runExec(header *help.ListNode) {
 		}
 
 		// 执行事件, 返回true, 删除这个事件, 返回false表示用户自己处理
-		if evt.Data.(*IEvent).Exec(this.self) {
-			this.RemoveEvent(evt)
+		if evt.Data.(event.IEvent).Exec(this.self) {
+			this.RemoveEvent(evt.Data.(event.IEvent))
 		} else if header.Next == evt {
 			// 防止使用者没有删除使用过的事件, 造成死循环, 该事件, 用户要么重新投递到其他链表, 要么删除
-			this.RemoveEvent(evt)
+			this.RemoveEvent(evt.Data.(event.IEvent))
 		}
 	}
 }
@@ -410,21 +399,6 @@ func (this *Thread) PrintAll() {
 	for k, v := range this.evt_names {
 		fmt.Println(k, v)
 	}
-}
-
-// // Debug logs a message at debug level.
-// func Debug(v ...interface{}) {
-// 	BeeLogger.Debug(generateFmtStr(len(v)), v...)
-// }
-
-// // Trace logs a message at trace level.
-// // compatibility alias for Warning()
-// func Trace(v ...interface{}) {
-// 	BeeLogger.Trace(generateFmtStr(len(v)), v...)
-// }
-
-func generateFmtStr(n int) string {
-	return strings.Repeat("%v ", n)
 }
 
 // 线程日志 : 调试[D]级别日志

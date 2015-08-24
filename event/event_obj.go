@@ -10,7 +10,7 @@ type EventObj struct {
 
 // 必须调用
 func (this *EventObj) InitEventHeader() {
-	this.event_header.Init("", 100)
+	this.event_header.Init()
 }
 
 // 压入定时器事件
@@ -19,7 +19,7 @@ func (this *EventObj) PostEvent(e *help.ListNode) bool {
 		pre := this.event_header.Pre
 
 		this.event_header.Pre = e
-		e.Next = this.event_header
+		e.Next = &this.event_header
 		e.Pre = pre
 		pre.Next = e
 

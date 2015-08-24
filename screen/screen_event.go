@@ -30,7 +30,7 @@ func (this *Event_heart_beat) Exec(home interface{}) bool {
 	//
 	evt := &Event_heart_beat{Screen_: this.Screen_}
 	evt.Init("", 3000)
-	this.Screen_.PostEvent(evt)
+	this.Screen_.PostEvent(evt.GetNodeObj())
 	this.Screen_.Get_thread().PostEvent(evt)
 
 	return true
